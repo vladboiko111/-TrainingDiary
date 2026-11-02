@@ -1,0 +1,80 @@
+@page "/workouts/create"
+@using Microsoft.EntityFrameworkCore
+@using TrainingDiary.Models
+@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>Workout</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Workout" OnValidSubmit="AddWorkout" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="sporttype" class="form-label">SportType:</label> 
+                <InputText id="sporttype" @bind-Value="Workout.SportType" class="form-control" /> 
+                <ValidationMessage For="() => Workout.SportType" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="exercisename" class="form-label">ExerciseName:</label> 
+                <InputText id="exercisename" @bind-Value="Workout.ExerciseName" class="form-control" /> 
+                <ValidationMessage For="() => Workout.ExerciseName" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="type" class="form-label">Type:</label> 
+                
+<InputSelect TValue="WorkoutType"
+             id="Type"
+             @bind-Value="Workout.Type"
+             class="form-control">
+    @foreach (var type in Enum.GetValues<WorkoutType>())
+    {
+        <option value="@type">@type</option>
+    }
+</InputSelect>
+
+            </div>        
+            <div class="mb-3">
+                <label for="durationminutes" class="form-label">DurationMinutes:</label> 
+                <InputNumber id="durationminutes" @bind-Value="Workout.DurationMinutes" class="form-control" /> 
+                <ValidationMessage For="() => Workout.DurationMinutes" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="distance" class="form-label">Distance:</label> 
+                <InputNumber id="distance" @bind-Value="Workout.Distance" class="form-control" /> 
+                <ValidationMessage For="() => Workout.Distance" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="performedon" class="form-label">PerformedOn:</label> 
+                <InputDate id="performedon" @bind-Value="Workout.PerformedOn" class="form-control" /> 
+                <ValidationMessage For="() => Workout.PerformedOn" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/workouts">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Workout Workout { get; set; } = default!;
+
+    protected override void OnInitialized() => Workout ??= new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddWorkout()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Workouts.Add(Workout);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/workouts");
+    }
+}

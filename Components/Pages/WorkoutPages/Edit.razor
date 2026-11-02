@@ -1,0 +1,124 @@
+@page "/workouts/edit"
+@using Microsoft.EntityFrameworkCore
+@using TrainingDiary.Models
+@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>Workout</h2>
+<hr />
+@if (Workout is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="Workout" OnValidSubmit="UpdateWorkout" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input type="hidden" name="Workout.Id" value="@Workout.Id" />
+                <div class="mb-3">
+                    <label for="sporttype" class="form-label">SportType:</label>
+                    <InputText id="sporttype" @bind-Value="Workout.SportType" class="form-control" />
+                    <ValidationMessage For="() => Workout.SportType" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="exercisename" class="form-label">ExerciseName:</label>
+                    <InputText id="exercisename" @bind-Value="Workout.ExerciseName" class="form-control" />
+                    <ValidationMessage For="() => Workout.ExerciseName" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="type" class="form-label">Type:</label>
+                    
+<InputSelect TValue="WorkoutType"
+             id="type"
+             @bind-Value="Workout.Type"
+             class="form-control">
+    @foreach (var type in Enum.GetValues<WorkoutType>())
+    {
+        <option value="@type">@type</option>
+    }
+</InputSelect>
+
+                    <ValidationMessage For="() => Workout.Type" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="durationminutes" class="form-label">DurationMinutes:</label>
+                    <InputNumber id="durationminutes" @bind-Value="Workout.DurationMinutes" class="form-control" />
+                    <ValidationMessage For="() => Workout.DurationMinutes" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="distance" class="form-label">Distance:</label>
+                    <InputNumber id="distance" @bind-Value="Workout.Distance" class="form-control" />
+                    <ValidationMessage For="() => Workout.Distance" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="performedon" class="form-label">PerformedOn:</label>
+                    <InputDate id="performedon" @bind-Value="Workout.PerformedOn" class="form-control" />
+                    <ValidationMessage For="() => Workout.PerformedOn" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/workouts">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private Workout? Workout { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Workout ??= await context.Workouts.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (Workout is null)
+        {
+            NavigationManager.NotFound();
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateWorkout()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Workout!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!WorkoutExists(Workout!.Id))
+            {
+                NavigationManager.NotFound();
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/workouts");
+    }
+
+    private bool WorkoutExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Workouts.Any(e => e.Id == id);
+    }
+}

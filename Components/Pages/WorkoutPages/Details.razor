@@ -1,0 +1,56 @@
+@page "/workouts/details"
+@using Microsoft.EntityFrameworkCore
+@using TrainingDiary.Models
+@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>Workout</h2>
+    <hr />
+    @if (workout is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">SportType</dt>
+            <dd class="col-sm-10">@workout.SportType</dd>
+            <dt class="col-sm-2">ExerciseName</dt>
+            <dd class="col-sm-10">@workout.ExerciseName</dd>
+            <dt class="col-sm-2">Type</dt>
+            <dd class="col-sm-10">@workout.Type</dd>
+            <dt class="col-sm-2">DurationMinutes</dt>
+            <dd class="col-sm-10">@workout.DurationMinutes</dd>
+            <dt class="col-sm-2">Distance</dt>
+            <dd class="col-sm-10">@workout.Distance</dd>
+            <dt class="col-sm-2">PerformedOn</dt>
+            <dd class="col-sm-10">@workout.PerformedOn</dd>
+        </dl>
+        <div>
+            <a href="@($"/workouts/edit?id={workout.Id}")">Edit</a> |
+            <a href="@($"/workouts")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private Workout? workout;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        workout = await context.Workouts.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (workout is null)
+        {
+            NavigationManager.NotFound();
+        }
+    }
+}
