@@ -1,3 +1,4 @@
+
 @page "/workouts/delete"
 @using Microsoft.EntityFrameworkCore
 @using TrainingDiary.Models
@@ -6,44 +7,40 @@
 
 <PageTitle>Delete</PageTitle>
 
-<h1>Delete</h1>
+<h1>Видалення тренування</h1>
 
-<p>Are you sure you want to delete this?</p>
+<p>Ви впевнені, що хочете видалити це тренування?</p>
+
 <div>
-    <h2>Workout</h2>
+    <h2>Інформація про тренування</h2>
     <hr />
+
     @if (workout is null)
     {
-        <p><em>Loading...</em></p>
+        <p><em>Завантаження...</em></p>
     }
-    else {
-        <dl class="row">
-            <dt class="col-sm-2">SportType</dt>
-            <dd class="col-sm-10">@workout.SportType</dd>
-        </dl>
-        <dl class="row">
-            <dt class="col-sm-2">ExerciseName</dt>
-            <dd class="col-sm-10">@workout.ExerciseName</dd>
-        </dl>
-        <dl class="row">
-            <dt class="col-sm-2">Type</dt>
-            <dd class="col-sm-10">@workout.Type</dd>
-        </dl>
-        <dl class="row">
-            <dt class="col-sm-2">DurationMinutes</dt>
-            <dd class="col-sm-10">@workout.DurationMinutes</dd>
-        </dl>
-        <dl class="row">
-            <dt class="col-sm-2">Distance</dt>
-            <dd class="col-sm-10">@workout.Distance</dd>
-        </dl>
-        <dl class="row">
-            <dt class="col-sm-2">PerformedOn</dt>
-            <dd class="col-sm-10">@workout.PerformedOn</dd>
-        </dl>
-        <EditForm method="post" Model="workout" OnValidSubmit="DeleteWorkout" FormName="delete" Enhance>
-            <button type="submit" class="btn btn-danger" disabled="@(workout is null)">Delete</button> |
-            <a href="/workouts">Back to List</a>
+    else
+    {
+        <WorkoutCard Workout="workout"
+                     Caption="Запис для видалення"
+                     ShowDetails="false" />
+
+        <EditForm method="post"
+                  Model="workout"
+                  OnValidSubmit="DeleteWorkout"
+                  FormName="delete"
+                  Enhance>
+
+            <button type="submit"
+                    class="btn btn-danger">
+                Видалити
+            </button>
+
+            <a href="/workouts"
+               class="btn btn-secondary ms-2">
+                Назад до списку
+            </a>
+
         </EditForm>
     }
 </div>
@@ -57,7 +54,9 @@
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        workout = await context.Workouts.FirstOrDefaultAsync(m => m.Id == Id);
+
+        workout = await context.Workouts
+            .FirstOrDefaultAsync(m => m.Id == Id);
 
         if (workout is null)
         {
@@ -68,8 +67,11 @@
     private async Task DeleteWorkout()
     {
         using var context = DbFactory.CreateDbContext();
+
         context.Workouts.Remove(workout!);
+
         await context.SaveChangesAsync();
+
         NavigationManager.NavigateTo("/workouts");
     }
 }

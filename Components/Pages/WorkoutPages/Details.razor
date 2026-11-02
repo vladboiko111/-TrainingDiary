@@ -16,20 +16,11 @@
         <p><em>Loading...</em></p>
     }
     else {
-        <dl class="row">
-            <dt class="col-sm-2">SportType</dt>
-            <dd class="col-sm-10">@workout.SportType</dd>
-            <dt class="col-sm-2">ExerciseName</dt>
-            <dd class="col-sm-10">@workout.ExerciseName</dd>
-            <dt class="col-sm-2">Type</dt>
-            <dd class="col-sm-10">@workout.Type</dd>
-            <dt class="col-sm-2">DurationMinutes</dt>
-            <dd class="col-sm-10">@workout.DurationMinutes</dd>
-            <dt class="col-sm-2">Distance</dt>
-            <dd class="col-sm-10">@workout.Distance</dd>
-            <dt class="col-sm-2">PerformedOn</dt>
-            <dd class="col-sm-10">@workout.PerformedOn</dd>
-        </dl>
+        
+<WorkoutCard Workout="workout"
+             Caption="Детальна інформація"
+             ShowDetails="true" />
+
         <div>
             <a href="@($"/workouts/edit?id={workout.Id}")">Edit</a> |
             <a href="@($"/workouts")">Back to List</a>

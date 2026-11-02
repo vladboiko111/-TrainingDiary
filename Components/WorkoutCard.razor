@@ -1,0 +1,45 @@
+
+<div class="card mb-3">
+    <div class="card-body">
+
+        <h5 class="card-title">
+            @Caption: @Workout.ExerciseName
+        </h5>
+
+        <p class="card-text">
+            Вид спорту: @Workout.SportType
+        </p>
+
+        <p class="card-text">
+            Тривалість: @Workout.DurationMinutes хв
+        </p>
+
+        @if (ShowDetails)
+        {
+            <p class="card-text">
+                Категорія: @Workout.Type
+            </p>
+
+            <p class="card-text">
+                Дата: @Workout.PerformedOn.ToString("dd.MM.yyyy")
+            </p>
+
+            <p class="card-text">
+                Дистанція:
+                @(Workout.Distance?.ToString() ?? "Не вказана")
+            </p>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Workout Workout { get; set; } = default!;
+
+    [Parameter]
+    public string Caption { get; set; } = "Тренування";
+
+    [Parameter]
+    public bool ShowDetails { get; set; } = true;
+}
