@@ -1,9 +1,15 @@
+
+using Microsoft.EntityFrameworkCore;
+using TrainingDiary.Data;
 using TrainingDiary.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents();
+
+builder.Services.AddDbContextFactory<TrainingDiaryContext>(options =>
+    options.UseSqlite("Data Source=trainingdiary.db"));
 
 var app = builder.Build();
 
