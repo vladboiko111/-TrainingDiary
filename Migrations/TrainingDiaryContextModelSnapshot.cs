@@ -69,6 +69,11 @@ namespace TrainingDiary.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ExerciseNameSearch")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("PerformedOn")
                         .HasColumnType("TEXT");
 

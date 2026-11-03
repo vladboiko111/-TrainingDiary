@@ -24,7 +24,6 @@ else
 {
     <div class="row">
         <div class="col-md-6">
-
             <form method="post"
                   @onsubmit="UpdateWorkout"
                   @formname="edit-workout-lab7">
@@ -42,7 +41,6 @@ else
                     </div>
                 }
 
-                <!-- Вибір виду спорту -->
                 <div class="mb-3">
                     <label for="category" class="form-label">
                         Вид спорту:
@@ -65,11 +63,9 @@ else
                                 @category.Name
                             </option>
                         }
-
                     </select>
                 </div>
 
-                <!-- Вибір вправи -->
                 <div class="mb-3">
                     <label for="exercise" class="form-label">
                         Назва вправи:
@@ -92,11 +88,9 @@ else
                                 @exercise.Name
                             </option>
                         }
-
                     </select>
                 </div>
 
-                <!-- Тип тренування -->
                 <div class="mb-3">
                     <label for="type" class="form-label">
                         Категорія тренування:
@@ -114,11 +108,9 @@ else
                                 @type
                             </option>
                         }
-
                     </select>
                 </div>
 
-                <!-- Тривалість -->
                 <div class="mb-3">
                     <label for="duration" class="form-label">
                         Тривалість (хвилини):
@@ -134,7 +126,6 @@ else
                            required />
                 </div>
 
-                <!-- Дистанція -->
                 <div class="mb-3">
                     <label for="distance" class="form-label">
                         Дистанція (км):
@@ -154,7 +145,6 @@ else
                     </small>
                 </div>
 
-                <!-- Дата тренування -->
                 <div class="mb-3">
                     <label for="performedon" class="form-label">
                         Дата тренування:
@@ -171,9 +161,7 @@ else
                 <button type="submit" class="btn btn-primary">
                     Зберегти зміни
                 </button>
-
             </form>
-
         </div>
     </div>
 }
@@ -238,14 +226,11 @@ else
             return;
         }
 
-        // Заповнюємо початкові значення лише при відкритті форми.
-        // При POST не перезаписуємо введені користувачем дані.
         if (SubmissionMarker != "yes")
         {
             SelectedCategoryId = existingWorkout.SportCategoryId;
             SelectedExerciseId = existingWorkout.ExerciseId;
 
-            // Підтримка старих тренувань без зовнішніх ключів.
             if (!SelectedCategoryId.HasValue)
             {
                 SelectedCategoryId = sportCategories
@@ -325,7 +310,6 @@ else
 
         using var context = DbFactory.CreateDbContext();
 
-        // Перевіряємо, чи існують вибрані записи.
         var category = await context.SportCategories
             .AsNoTracking()
             .FirstOrDefaultAsync(c =>
@@ -342,7 +326,6 @@ else
             return;
         }
 
-        // Формуємо модель для перевірки.
         var workout = new Workout
         {
             Id = Id,
@@ -353,13 +336,15 @@ else
             SportType = category.Name,
             ExerciseName = exercise.Name,
 
+            // ЛР №8: автоматичне заповнення пошукового поля.
+            ExerciseNameSearch = exercise.Name.Trim().ToLowerInvariant(),
+
             Type = SelectedType.Value,
             DurationMinutes = DurationMinutes.Value,
             Distance = distance,
             PerformedOn = PerformedOn.Value
         };
 
-        // Перевірки лабораторної №6.
         var validationResults = new List<ValidationResult>();
 
         bool isValid = Validator.TryValidateObject(
@@ -376,7 +361,6 @@ else
             return;
         }
 
-        // Завантажуємо існуючий запис для безпечного оновлення.
         var record = await context.Workouts
             .FirstOrDefaultAsync(w => w.Id == Id);
 
@@ -386,12 +370,14 @@ else
             return;
         }
 
-        // Оновлюємо лише дозволені поля.
         record.SportCategoryId = workout.SportCategoryId;
         record.ExerciseId = workout.ExerciseId;
 
         record.SportType = workout.SportType;
         record.ExerciseName = workout.ExerciseName;
+
+        // ЛР №8: оновлюємо пошукове поле під час редагування.
+        record.ExerciseNameSearch = workout.ExerciseNameSearch;
 
         record.Type = workout.Type;
         record.DurationMinutes = workout.DurationMinutes;

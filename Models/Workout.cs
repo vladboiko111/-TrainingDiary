@@ -21,6 +21,10 @@ public class Workout : IValidatableObject
         ErrorMessage = "Назва вправи повинна містити від 2 до 100 символів")]
     public string ExerciseName { get; set; } = string.Empty;
 
+    // ЛР №8: службова властивість для пошуку
+    [StringLength(100)]
+    public string ExerciseNameSearch { get; set; } = string.Empty;
+
     // Категорія тренування
     public WorkoutType Type { get; set; }
 

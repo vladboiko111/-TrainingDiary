@@ -6,8 +6,6 @@
 @using TrainingDiary.Models
 @using TrainingDiary.Data
 
-@implements IAsyncDisposable
-
 @inject IDbContextFactory<TrainingDiaryContext> DbFactory
 
 <PageTitle>Мої тренування</PageTitle>
@@ -15,61 +13,214 @@
 <h1>Мої тренування</h1>
 
 <p>
-    <a href="/workouts/create"
-       class="btn btn-primary">
+    <a href="/workouts/create" class="btn btn-primary">
         Додати тренування
     </a>
 </p>
 
-<QuickGrid Class="table" Items="@PagedWorkouts">
+<!-- ЛР №8: форма пошуку та фільтрації -->
+<div class="card mb-4">
+    <div class="card-body">
 
-    <TemplateColumn Title="Вид спорту" Context="workout">
-        @(workout.SportCategory?.Name ?? workout.SportType)
-    </TemplateColumn>
+        <h5 class="card-title">
+            Пошук і фільтрація тренувань
+        </h5>
 
-    <TemplateColumn Title="Назва вправи" Context="workout">
-        @(workout.Exercise?.Name ?? workout.ExerciseName)
-    </TemplateColumn>
+        <form method="get" action="/workouts">
 
-    <PropertyColumn Property="workout => workout.Type"
-                    Title="Категорія" />
+            <div class="row g-3">
 
-    <PropertyColumn Property="workout => workout.DurationMinutes"
-                    Title="Тривалість (хв)" />
+                <div class="col-md-6">
+                    <label for="search" class="form-label">
+                        Пошук за назвою вправи
+                    </label>
 
-    <PropertyColumn Property="workout => workout.Distance"
-                    Title="Дистанція (км)" />
+                    <input type="text"
+                           id="search"
+                           name="search"
+                           value="@Search"
+                           class="form-control"
+                           placeholder="Наприклад: жим або біг" />
+                </div>
 
-    <PropertyColumn Property="workout => workout.PerformedOn"
-                    Title="Дата" 
-                    Format="dd.MM.yyyy" />
+                <div class="col-md-3">
+                    <label for="type" class="form-label">
+                        Тип тренування
+                    </label>
 
-    <TemplateColumn Title="Дії" Context="workout">
+                    <select id="type"
+                            name="type"
+                            class="form-select">
 
-        <a href="@($"/workouts/edit?id={workout.Id}")">
-            Edit
-        </a>
-        |
+                        <option value=""
+                                selected="@(string.IsNullOrEmpty(TypeFilter))">
+                            Усі типи
+                        </option>
 
-        <a href="@($"/workouts/details?id={workout.Id}")">
-            Details
-        </a>
-        |
+                        @foreach (var type in Enum.GetValues<WorkoutType>())
+                        {
+                            <option value="@type"
+                                    selected="@(TypeFilter == type.ToString())">
+                                @type
+                            </option>
+                        }
 
-        <a href="@($"/workouts/delete?id={workout.Id}")">
-            Delete
-        </a>
+                    </select>
+                </div>
 
-    </TemplateColumn>
+                <div class="col-md-3">
+                    <label for="sport" class="form-label">
+                        Вид спорту
+                    </label>
 
-</QuickGrid>
+                    <select id="sport"
+                            name="sport"
+                            class="form-select">
 
+                        <option value=""
+                                selected="@(!SportFilter.HasValue)">
+                            Усі види спорту
+                        </option>
+
+                        @foreach (var category in sportCategories)
+                        {
+                            <option value="@category.Id"
+                                    selected="@(SportFilter == category.Id)">
+                                @category.Name
+                            </option>
+                        }
+
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="sort" class="form-label">
+                        Сортування
+                    </label>
+
+                    <select id="sort"
+                            name="sort"
+                            class="form-select">
+
+                        <option value="id"
+                                selected="@(Sort == "id" || string.IsNullOrEmpty(Sort))">
+                            За порядком додавання
+                        </option>
+
+                        <option value="date_desc"
+                                selected="@(Sort == "date_desc")">
+                            Дата: від нових до старих
+                        </option>
+
+                        <option value="date_asc"
+                                selected="@(Sort == "date_asc")">
+                            Дата: від старих до нових
+                        </option>
+
+                        <option value="duration_desc"
+                                selected="@(Sort == "duration_desc")">
+                            Тривалість: від більшої
+                        </option>
+
+                        <option value="duration_asc"
+                                selected="@(Sort == "duration_asc")">
+                            Тривалість: від меншої
+                        </option>
+
+                        <option value="name"
+                                selected="@(Sort == "name")">
+                            Назва вправи: А–Я
+                        </option>
+
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Знайти
+                </button>
+
+                <a href="/workouts"
+                   class="btn btn-outline-secondary">
+                    Скинути фільтри
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<!-- Результат LINQ-запиту -->
+<p>
+    <strong>Знайдено тренувань: @TotalCount</strong>
+</p>
+
+@if (displayedWorkouts.Count == 0)
+{
+    <div class="alert alert-info">
+        За вибраними умовами тренувань не знайдено.
+    </div>
+}
+else
+{
+    <QuickGrid Class="table"
+               Items="@displayedWorkouts.AsQueryable()">
+
+        <TemplateColumn Title="Вид спорту" Context="workout">
+            @(workout.SportCategory?.Name ?? workout.SportType)
+        </TemplateColumn>
+
+        <TemplateColumn Title="Назва вправи" Context="workout">
+            @(workout.Exercise?.Name ?? workout.ExerciseName)
+        </TemplateColumn>
+
+        <PropertyColumn Property="workout => workout.Type"
+                        Title="Категорія" />
+
+        <PropertyColumn Property="workout => workout.DurationMinutes"
+                        Title="Тривалість (хв)" />
+
+        <PropertyColumn Property="workout => workout.Distance"
+                        Title="Дистанція (км)" />
+
+        <PropertyColumn Property="workout => workout.PerformedOn"
+                        Title="Дата"
+                        Format="dd.MM.yyyy" />
+
+        <TemplateColumn Title="Дії" Context="workout">
+
+            <a href="@($"/workouts/edit?id={workout.Id}")">
+                Edit
+            </a>
+            |
+
+            <a href="@($"/workouts/details?id={workout.Id}")">
+                Details
+            </a>
+            |
+
+            <a href="@($"/workouts/delete?id={workout.Id}")">
+                Delete
+            </a>
+
+        </TemplateColumn>
+
+    </QuickGrid>
+}
+
+<!-- Пагінація з урахуванням фільтрів -->
 <div class="mt-3 d-flex align-items-center gap-3">
 
     @if (CurrentPage > 1)
     {
         <a class="btn btn-outline-primary"
-           href="@($"/workouts?page={CurrentPage - 1}")">
+           href="@BuildPageUrl(CurrentPage - 1)">
             Назад
         </a>
     }
@@ -81,7 +232,7 @@
     @if (CurrentPage < TotalPages)
     {
         <a class="btn btn-outline-primary"
-           href="@($"/workouts?page={CurrentPage + 1}")">
+           href="@BuildPageUrl(CurrentPage + 1)">
             Далі
         </a>
     }
@@ -90,50 +241,156 @@
 
 @code {
 
+    // Параметри пошуку надходять із URL.
+    [SupplyParameterFromQuery(Name = "search")]
+    private string? Search { get; set; }
+
+    [SupplyParameterFromQuery(Name = "type")]
+    private string? TypeFilter { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sport")]
+    private int? SportFilter { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sort")]
+    private string? Sort { get; set; }
+
     [SupplyParameterFromQuery(Name = "page")]
     private int? Page { get; set; }
 
     private const int PageSize = 5;
 
-    private TrainingDiaryContext context = default!;
+    private List<Workout> displayedWorkouts = new();
+    private List<SportCategory> sportCategories = new();
 
-    private int TotalPages =>
-        Math.Max(
+    private int TotalCount;
+    private int CurrentPage = 1;
+    private int TotalPages = 1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
+
+        sportCategories = await context.SportCategories
+            .AsNoTracking()
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        // ЛР №8: будуємо IQueryable.
+        IQueryable<Workout> query = context.Workouts
+            .AsNoTracking()
+            .Include(w => w.SportCategory)
+            .Include(w => w.Exercise);
+
+        // 1. Пошук за нормалізованою назвою.
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            string searchText = Search.Trim().ToLowerInvariant();
+
+            query = query.Where(w =>
+                w.ExerciseNameSearch.Contains(searchText));
+        }
+
+        // 2. Фільтрація за типом тренування.
+        if (!string.IsNullOrWhiteSpace(TypeFilter) &&
+            Enum.TryParse<WorkoutType>(
+                TypeFilter,
+                true,
+                out var selectedType) &&
+            Enum.IsDefined(typeof(WorkoutType), selectedType))
+        {
+            query = query.Where(w =>
+                w.Type == selectedType);
+        }
+
+        // 3. Фільтрація за видом спорту.
+        if (SportFilter.HasValue)
+        {
+            int categoryId = SportFilter.Value;
+
+            query = query.Where(w =>
+                w.SportCategoryId == categoryId);
+        }
+
+        // 4. Сортування.
+        query = Sort switch
+        {
+            "date_desc" => query
+                .OrderByDescending(w => w.PerformedOn)
+                .ThenBy(w => w.Id),
+
+            "date_asc" => query
+                .OrderBy(w => w.PerformedOn)
+                .ThenBy(w => w.Id),
+
+            "duration_desc" => query
+                .OrderByDescending(w => w.DurationMinutes)
+                .ThenBy(w => w.Id),
+
+            "duration_asc" => query
+                .OrderBy(w => w.DurationMinutes)
+                .ThenBy(w => w.Id),
+
+            "name" => query
+                .OrderBy(w => w.ExerciseNameSearch)
+                .ThenBy(w => w.Id),
+
+            _ => query.OrderBy(w => w.Id)
+        };
+
+        // 5. Асинхронний підрахунок записів.
+        TotalCount = await query.CountAsync();
+
+        TotalPages = Math.Max(
             1,
-            (context.Workouts.Count() + PageSize - 1)
-            / PageSize
+            (TotalCount + PageSize - 1) / PageSize
         );
 
-    private int CurrentPage =>
-        Math.Clamp(Page ?? 1, 1, TotalPages);
+        CurrentPage = Math.Clamp(
+            Page ?? 1,
+            1,
+            TotalPages
+        );
 
-    private IQueryable<Workout> PagedWorkouts =>
-        context.Workouts
-
-            .AsNoTracking()
-
-            // Завантаження категорії спорту
-            .Include(w => w.SportCategory)
-
-            // Завантаження вправи
-            .Include(w => w.Exercise)
-
-            .OrderBy(w => w.Id)
-
+        // 6. Пагінація виконується в базі даних.
+        displayedWorkouts = await query
             .Skip((CurrentPage - 1) * PageSize)
-
-            .Take(PageSize);
-
-    protected override void OnInitialized()
-    {
-        context = DbFactory.CreateDbContext();
+            .Take(PageSize)
+            .ToListAsync();
     }
 
-    public async ValueTask DisposeAsync()
+    // Зберігаємо фільтри при переході між сторінками.
+    private string BuildPageUrl(int pageNumber)
     {
-        if (context is not null)
+        var parameters = new List<string>
         {
-            await context.DisposeAsync();
+            $"page={pageNumber}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            parameters.Add(
+                $"search={Uri.EscapeDataString(Search)}");
         }
+
+        if (!string.IsNullOrWhiteSpace(TypeFilter))
+        {
+            parameters.Add(
+                $"type={Uri.EscapeDataString(TypeFilter)}");
+        }
+
+        if (SportFilter.HasValue)
+        {
+            parameters.Add(
+                $"sport={SportFilter.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(Sort))
+        {
+            parameters.Add(
+                $"sort={Uri.EscapeDataString(Sort)}");
+        }
+
+        return "/workouts?" + string.Join("&", parameters);
     }
 }

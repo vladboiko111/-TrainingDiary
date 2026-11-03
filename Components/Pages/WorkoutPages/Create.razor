@@ -219,9 +219,13 @@
 
         if (!string.IsNullOrWhiteSpace(DistanceText))
         {
+            var normalizedDistance = DistanceText.Trim()
+                .Replace(',', '.');
+
             if (decimal.TryParse(
-                DistanceText,
-                NumberStyles.Number,
+                normalizedDistance,
+                NumberStyles.AllowDecimalPoint |
+                NumberStyles.AllowLeadingSign,
                 CultureInfo.InvariantCulture,
                 out var parsedDistance))
             {
@@ -261,9 +265,12 @@
             SportCategoryId = category.Id,
             ExerciseId = exercise.Id,
 
-            // Зберігаємо сумісність зі старими лабораторними
+            // Сумісність із попередніми лабораторними.
             SportType = category.Name,
             ExerciseName = exercise.Name,
+
+            // ЛР №8: нормалізована назва для пошуку.
+            ExerciseNameSearch = exercise.Name.Trim().ToLowerInvariant(),
 
             Type = SelectedType,
             DurationMinutes = DurationMinutes,
@@ -271,7 +278,7 @@
             PerformedOn = PerformedOn
         };
 
-        // Перевірки з лабораторної №6
+        // Перевірки з лабораторної №6.
         var validationResults = new List<ValidationResult>();
 
         bool isValid = Validator.TryValidateObject(
@@ -291,7 +298,6 @@
         try
         {
             context.Workouts.Add(workout);
-
             await context.SaveChangesAsync();
         }
         catch (DbUpdateException ex)
