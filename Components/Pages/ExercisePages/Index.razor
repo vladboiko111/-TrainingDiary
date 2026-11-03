@@ -1,0 +1,36 @@
+@page "/exercises"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using TrainingDiary.Models
+@using TrainingDiary.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="exercises/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.Exercises">
+    <PropertyColumn Property="exercise => exercise.Name" />
+
+    <TemplateColumn Context="exercise">
+        <a href="@($"exercises/edit?id={exercise.Id}")">Edit</a> |
+        <a href="@($"exercises/details?id={exercise.Id}")">Details</a> |
+        <a href="@($"exercises/delete?id={exercise.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private TrainingDiaryContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

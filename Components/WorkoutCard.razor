@@ -1,13 +1,16 @@
 
+@using TrainingDiary.Models
+
 <div class="card mb-3">
     <div class="card-body">
 
         <h5 class="card-title">
-            @Caption: @Workout.ExerciseName
+            @Caption: @(Workout.Exercise?.Name ?? Workout.ExerciseName)
         </h5>
 
         <p class="card-text">
-            Вид спорту: @Workout.SportType
+            Вид спорту:
+            @(Workout.SportCategory?.Name ?? Workout.SportType)
         </p>
 
         <p class="card-text">

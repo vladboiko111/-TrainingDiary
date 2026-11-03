@@ -1,0 +1,107 @@
+
+@page "/exercises/create"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.EntityFrameworkCore
+@using TrainingDiary.Models
+
+@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Додати вправу</PageTitle>
+
+<h1>Додати вправу</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-5">
+
+        <form method="post"
+              @onsubmit="SaveExercise"
+              @formname="create-exercise">
+
+            <AntiforgeryToken />
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @error
+                </div>
+            }
+
+            <div class="mb-3">
+                <label for="name" class="form-label">
+                    Назва вправи:
+                </label>
+
+                <input type="text"
+                       id="name"
+                       name="ExerciseName"
+                       value="@ExerciseName"
+                       maxlength="100"
+                       class="form-control"
+                       placeholder="Наприклад: Жим лежачи" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Зберегти вправу
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="/exercises">
+        Назад до списку
+    </a>
+</div>
+
+@code {
+    [SupplyParameterFromForm(FormName = "create-exercise")]
+    private string? ExerciseName { get; set; }
+
+    private string? error;
+
+    private async Task SaveExercise()
+    {
+        error = null;
+
+        var exercise = new Exercise
+        {
+            Name = ExerciseName?.Trim() ?? string.Empty
+        };
+
+        var validationResults = new List<ValidationResult>();
+
+        bool isValid = Validator.TryValidateObject(
+            exercise,
+            new ValidationContext(exercise),
+            validationResults,
+            validateAllProperties: true
+        );
+
+        if (!isValid)
+        {
+            error = validationResults.FirstOrDefault()?.ErrorMessage
+                    ?? "Перевірте назву вправи.";
+            return;
+        }
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+
+            context.Exercises.Add(exercise);
+
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            error = "Не вдалося зберегти вправу. Спробуйте ще раз.";
+            return;
+        }
+
+        NavigationManager.NavigateTo("/exercises");
+    }
+}

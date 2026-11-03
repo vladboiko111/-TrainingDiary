@@ -1,62 +1,78 @@
 
 @page "/workouts/delete"
+
 @using Microsoft.EntityFrameworkCore
 @using TrainingDiary.Models
-@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
+@using TrainingDiary.Data
+
+@inject IDbContextFactory<TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Delete</PageTitle>
+<PageTitle>Видалення тренування</PageTitle>
 
 <h1>Видалення тренування</h1>
 
 <p>Ви впевнені, що хочете видалити це тренування?</p>
 
-<div>
-    <h2>Інформація про тренування</h2>
-    <hr />
+<h2>Інформація про тренування</h2>
+<hr />
 
-    @if (workout is null)
+@if (workout is null)
+{
+    <p><em>Тренування не знайдено.</em></p>
+}
+else
+{
+    <WorkoutCard Workout="workout"
+                 Caption="Запис для видалення"
+                 ShowDetails="false" />
+
+    @if (!string.IsNullOrEmpty(error))
     {
-        <p><em>Завантаження...</em></p>
+        <div class="alert alert-danger" role="alert">
+            @error
+        </div>
     }
-    else
-    {
-        <WorkoutCard Workout="workout"
-                     Caption="Запис для видалення"
-                     ShowDetails="false" />
 
-        <EditForm method="post"
-                  Model="workout"
-                  OnValidSubmit="DeleteWorkout"
-                  FormName="delete"
-                  Enhance>
+    <form method="post"
+          @onsubmit="DeleteWorkout"
+          @formname="delete-workout-lab7">
 
-            <button type="submit"
-                    class="btn btn-danger">
-                Видалити
-            </button>
+        <AntiforgeryToken />
 
-            <a href="/workouts"
-               class="btn btn-secondary ms-2">
-                Назад до списку
-            </a>
+        <input type="hidden"
+               name="WorkoutId"
+               value="@workout.Id" />
 
-        </EditForm>
-    }
-</div>
+        <button type="submit" class="btn btn-danger">
+            Видалити
+        </button>
+
+        <a href="/workouts" class="btn btn-secondary ms-2">
+            Назад до списку
+        </a>
+    </form>
+}
 
 @code {
     private Workout? workout;
+    private string? error;
 
     [SupplyParameterFromQuery]
     private int Id { get; set; }
+
+    [SupplyParameterFromForm(FormName = "delete-workout-lab7")]
+    private int? WorkoutId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
 
         workout = await context.Workouts
-            .FirstOrDefaultAsync(m => m.Id == Id);
+            .AsNoTracking()
+            .Include(w => w.SportCategory)
+            .Include(w => w.Exercise)
+            .FirstOrDefaultAsync(w => w.Id == Id);
 
         if (workout is null)
         {
@@ -66,11 +82,42 @@
 
     private async Task DeleteWorkout()
     {
+        error = null;
+
+        // Перевіряємо, що надісланий ID збігається
+        // із записом, відкритим для видалення.
+        if (!WorkoutId.HasValue || WorkoutId.Value != Id)
+        {
+            error = "Некоректний ідентифікатор тренування.";
+            return;
+        }
+
         using var context = DbFactory.CreateDbContext();
 
-        context.Workouts.Remove(workout!);
+        var record = await context.Workouts
+            .FirstOrDefaultAsync(w => w.Id == Id);
 
-        await context.SaveChangesAsync();
+        if (record is null)
+        {
+            error = "Тренування вже видалено або не знайдено.";
+            return;
+        }
+
+        try
+        {
+            context.Workouts.Remove(record);
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            error = "Тренування вже видалено або змінено.";
+            return;
+        }
+        catch (DbUpdateException)
+        {
+            error = "Не вдалося видалити тренування. Спробуйте ще раз.";
+            return;
+        }
 
         NavigationManager.NavigateTo("/workouts");
     }

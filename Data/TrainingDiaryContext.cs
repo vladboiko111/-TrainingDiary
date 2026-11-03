@@ -12,18 +12,25 @@ public class TrainingDiaryContext : DbContext
     {
     }
 
-    public DbSet<Workout> Workouts { get; set; }
+    // Основна таблиця тренувань
+    public DbSet<Workout> Workouts { get; set; } = null!;
+
+    // Довідник категорій спорту
+    public DbSet<SportCategory> SportCategories { get; set; } = null!;
+
+    // Довідник вправ
+    public DbSet<Exercise> Exercises { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Налаштування збереження Distance у SQLite
+        // Збереження дистанції в SQLite
         modelBuilder.Entity<Workout>()
             .Property(w => w.Distance)
             .HasConversion<double?>();
 
-        // Унікальний індекс для назви вправи та дати
+        // Унікальний індекс із лабораторної №6
         modelBuilder.Entity<Workout>()
             .HasIndex(w => new
             {
@@ -31,5 +38,19 @@ public class TrainingDiaryContext : DbContext
                 w.PerformedOn
             })
             .IsUnique();
+
+        // Зв'язок категорії спорту з тренуваннями
+        modelBuilder.Entity<Workout>()
+            .HasOne(w => w.SportCategory)
+            .WithMany(c => c.Workouts)
+            .HasForeignKey(w => w.SportCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Зв'язок вправи з тренуваннями
+        modelBuilder.Entity<Workout>()
+            .HasOne(w => w.Exercise)
+            .WithMany(e => e.Workouts)
+            .HasForeignKey(w => w.ExerciseId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

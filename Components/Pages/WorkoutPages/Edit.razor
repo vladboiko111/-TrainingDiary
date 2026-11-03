@@ -1,8 +1,12 @@
 
 @page "/workouts/edit"
+
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.Data.Sqlite
 @using TrainingDiary.Models
+
 @inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
 
@@ -12,24 +16,24 @@
 <h2>Зміна інформації про тренування</h2>
 <hr />
 
-@if (Workout is null)
+@if (existingWorkout is null)
 {
-    <p><em>Завантаження...</em></p>
+    <p><em>Тренування не знайдено.</em></p>
 }
 else
 {
     <div class="row">
         <div class="col-md-6">
 
-            <EditForm method="post"
-                      Model="Workout"
-                      OnValidSubmit="UpdateWorkout"
-                      FormName="edit">
+            <form method="post"
+                  @onsubmit="UpdateWorkout"
+                  @formname="edit-workout-lab7">
 
-                <DataAnnotationsValidator />
+                <AntiforgeryToken />
 
-                <ValidationSummary class="text-danger"
-                                   role="alert" />
+                <input type="hidden"
+                       name="SubmissionMarker"
+                       value="yes" />
 
                 @if (!string.IsNullOrEmpty(error))
                 {
@@ -38,107 +42,138 @@ else
                     </div>
                 }
 
-                <input type="hidden"
-                       name="Workout.Id"
-                       value="@Workout.Id" />
-
+                <!-- Вибір виду спорту -->
                 <div class="mb-3">
-                    <label for="sporttype" class="form-label">
+                    <label for="category" class="form-label">
                         Вид спорту:
                     </label>
 
-                    <InputText id="sporttype"
-                               @bind-Value="Workout.SportType"
-                               class="form-control" />
+                    <select id="category"
+                            name="SelectedCategoryId"
+                            class="form-select"
+                            required>
 
-                    <ValidationMessage
-                        For="() => Workout.SportType"
-                        class="text-danger" />
+                        <option value=""
+                                selected="@(!SelectedCategoryId.HasValue)">
+                            -- Оберіть вид спорту --
+                        </option>
+
+                        @foreach (var category in sportCategories)
+                        {
+                            <option value="@category.Id"
+                                    selected="@(SelectedCategoryId == category.Id)">
+                                @category.Name
+                            </option>
+                        }
+
+                    </select>
                 </div>
 
+                <!-- Вибір вправи -->
                 <div class="mb-3">
-                    <label for="exercisename" class="form-label">
+                    <label for="exercise" class="form-label">
                         Назва вправи:
                     </label>
 
-                    <InputText id="exercisename"
-                               @bind-Value="Workout.ExerciseName"
-                               class="form-control" />
+                    <select id="exercise"
+                            name="SelectedExerciseId"
+                            class="form-select"
+                            required>
 
-                    <ValidationMessage
-                        For="() => Workout.ExerciseName"
-                        class="text-danger" />
+                        <option value=""
+                                selected="@(!SelectedExerciseId.HasValue)">
+                            -- Оберіть вправу --
+                        </option>
+
+                        @foreach (var exercise in exercises)
+                        {
+                            <option value="@exercise.Id"
+                                    selected="@(SelectedExerciseId == exercise.Id)">
+                                @exercise.Name
+                            </option>
+                        }
+
+                    </select>
                 </div>
 
+                <!-- Тип тренування -->
                 <div class="mb-3">
                     <label for="type" class="form-label">
                         Категорія тренування:
                     </label>
 
-                    <InputSelect TValue="WorkoutType"
-                                 id="type"
-                                 @bind-Value="Workout.Type"
-                                 class="form-control">
+                    <select id="type"
+                            name="SelectedType"
+                            class="form-select"
+                            required>
 
                         @foreach (var type in Enum.GetValues<WorkoutType>())
                         {
-                            <option value="@type">@type</option>
+                            <option value="@type"
+                                    selected="@(SelectedType == type)">
+                                @type
+                            </option>
                         }
 
-                    </InputSelect>
-
-                    <ValidationMessage
-                        For="() => Workout.Type"
-                        class="text-danger" />
+                    </select>
                 </div>
 
+                <!-- Тривалість -->
                 <div class="mb-3">
-                    <label for="durationminutes" class="form-label">
+                    <label for="duration" class="form-label">
                         Тривалість (хвилини):
                     </label>
 
-                    <InputNumber id="durationminutes"
-                                 @bind-Value="Workout.DurationMinutes"
-                                 class="form-control" />
-
-                    <ValidationMessage
-                        For="() => Workout.DurationMinutes"
-                        class="text-danger" />
+                    <input type="number"
+                           id="duration"
+                           name="DurationMinutes"
+                           value="@DurationMinutes"
+                           min="1"
+                           max="600"
+                           class="form-control"
+                           required />
                 </div>
 
+                <!-- Дистанція -->
                 <div class="mb-3">
                     <label for="distance" class="form-label">
                         Дистанція (км):
                     </label>
 
-                    <InputNumber id="distance"
-                                 @bind-Value="Workout.Distance"
-                                 class="form-control" />
+                    <input type="number"
+                           id="distance"
+                           name="DistanceText"
+                           value="@DistanceText"
+                           min="0"
+                           max="1000"
+                           step="any"
+                           class="form-control" />
 
-                    <ValidationMessage
-                        For="() => Workout.Distance"
-                        class="text-danger" />
+                    <small class="text-muted">
+                        Для кардіотренування дистанція обов'язкова.
+                    </small>
                 </div>
 
+                <!-- Дата тренування -->
                 <div class="mb-3">
                     <label for="performedon" class="form-label">
                         Дата тренування:
                     </label>
 
-                    <InputDate id="performedon"
-                               @bind-Value="Workout.PerformedOn"
-                               class="form-control" />
-
-                    <ValidationMessage
-                        For="() => Workout.PerformedOn"
-                        class="text-danger" />
+                    <input type="date"
+                           id="performedon"
+                           name="PerformedOn"
+                           value="@(PerformedOn?.ToString("yyyy-MM-dd"))"
+                           class="form-control"
+                           required />
                 </div>
 
                 <button type="submit" class="btn btn-primary">
                     Зберегти зміни
                 </button>
 
-            </EditForm>
+            </form>
+
         </div>
     </div>
 }
@@ -151,8 +186,31 @@ else
     [SupplyParameterFromQuery]
     private int Id { get; set; }
 
-    [SupplyParameterFromForm]
-    private Workout? Workout { get; set; }
+    private Workout? existingWorkout;
+
+    private List<SportCategory> sportCategories = new();
+    private List<Exercise> exercises = new();
+
+    [SupplyParameterFromForm(FormName = "edit-workout-lab7")]
+    private string? SubmissionMarker { get; set; }
+
+    [SupplyParameterFromForm(FormName = "edit-workout-lab7")]
+    private int? SelectedCategoryId { get; set; }
+
+    [SupplyParameterFromForm(FormName = "edit-workout-lab7")]
+    private int? SelectedExerciseId { get; set; }
+
+    [SupplyParameterFromForm(FormName = "edit-workout-lab7")]
+    private WorkoutType? SelectedType { get; set; }
+
+    [SupplyParameterFromForm(FormName = "edit-workout-lab7")]
+    private int? DurationMinutes { get; set; }
+
+    [SupplyParameterFromForm(FormName = "edit-workout-lab7")]
+    private string? DistanceText { get; set; }
+
+    [SupplyParameterFromForm(FormName = "edit-workout-lab7")]
+    private DateTime? PerformedOn { get; set; }
 
     private string? error;
 
@@ -160,12 +218,55 @@ else
     {
         using var context = DbFactory.CreateDbContext();
 
-        Workout ??= await context.Workouts
+        sportCategories = await context.SportCategories
+            .AsNoTracking()
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        exercises = await context.Exercises
+            .AsNoTracking()
+            .OrderBy(e => e.Name)
+            .ToListAsync();
+
+        existingWorkout = await context.Workouts
+            .AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == Id);
 
-        if (Workout is null)
+        if (existingWorkout is null)
         {
             NavigationManager.NotFound();
+            return;
+        }
+
+        // Заповнюємо початкові значення лише при відкритті форми.
+        // При POST не перезаписуємо введені користувачем дані.
+        if (SubmissionMarker != "yes")
+        {
+            SelectedCategoryId = existingWorkout.SportCategoryId;
+            SelectedExerciseId = existingWorkout.ExerciseId;
+
+            // Підтримка старих тренувань без зовнішніх ключів.
+            if (!SelectedCategoryId.HasValue)
+            {
+                SelectedCategoryId = sportCategories
+                    .FirstOrDefault(c =>
+                        c.Name == existingWorkout.SportType)?.Id;
+            }
+
+            if (!SelectedExerciseId.HasValue)
+            {
+                SelectedExerciseId = exercises
+                    .FirstOrDefault(e =>
+                        e.Name == existingWorkout.ExerciseName)?.Id;
+            }
+
+            SelectedType = existingWorkout.Type;
+            DurationMinutes = existingWorkout.DurationMinutes;
+
+            DistanceText = existingWorkout.Distance?
+                .ToString(CultureInfo.InvariantCulture);
+
+            PerformedOn = existingWorkout.PerformedOn;
         }
     }
 
@@ -173,29 +274,129 @@ else
     {
         error = null;
 
-        if (Workout is null)
+        if (!SelectedCategoryId.HasValue ||
+            !SelectedExerciseId.HasValue)
         {
+            error = "Оберіть вид спорту та вправу.";
             return;
+        }
+
+        if (!SelectedType.HasValue ||
+            !Enum.IsDefined(typeof(WorkoutType), SelectedType.Value))
+        {
+            error = "Оберіть правильну категорію тренування.";
+            return;
+        }
+
+        if (!DurationMinutes.HasValue)
+        {
+            error = "Вкажіть тривалість тренування.";
+            return;
+        }
+
+        if (!PerformedOn.HasValue)
+        {
+            error = "Вкажіть дату тренування.";
+            return;
+        }
+
+        decimal? distance = null;
+
+        if (!string.IsNullOrWhiteSpace(DistanceText))
+        {
+            var normalizedDistance = DistanceText.Trim()
+                .Replace(',', '.');
+
+            if (decimal.TryParse(
+                normalizedDistance,
+                NumberStyles.AllowDecimalPoint |
+                NumberStyles.AllowLeadingSign,
+                CultureInfo.InvariantCulture,
+                out var parsedDistance))
+            {
+                distance = parsedDistance;
+            }
+            else
+            {
+                error = "Вкажіть коректну дистанцію.";
+                return;
+            }
         }
 
         using var context = DbFactory.CreateDbContext();
 
-        var existingWorkout = await context.Workouts
-            .FirstOrDefaultAsync(w => w.Id == Id);
+        // Перевіряємо, чи існують вибрані записи.
+        var category = await context.SportCategories
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c =>
+                c.Id == SelectedCategoryId.Value);
 
-        if (existingWorkout is null)
+        var exercise = await context.Exercises
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e =>
+                e.Id == SelectedExerciseId.Value);
+
+        if (category is null || exercise is null)
         {
-            error = "Тренування не знайдено. Можливо, його вже видалено.";
+            error = "Обраний вид спорту або вправу не знайдено.";
             return;
         }
 
-        // Оновлюємо лише дозволені властивості.
-        existingWorkout.SportType = Workout.SportType;
-        existingWorkout.ExerciseName = Workout.ExerciseName;
-        existingWorkout.Type = Workout.Type;
-        existingWorkout.DurationMinutes = Workout.DurationMinutes;
-        existingWorkout.Distance = Workout.Distance;
-        existingWorkout.PerformedOn = Workout.PerformedOn;
+        // Формуємо модель для перевірки.
+        var workout = new Workout
+        {
+            Id = Id,
+
+            SportCategoryId = category.Id,
+            ExerciseId = exercise.Id,
+
+            SportType = category.Name,
+            ExerciseName = exercise.Name,
+
+            Type = SelectedType.Value,
+            DurationMinutes = DurationMinutes.Value,
+            Distance = distance,
+            PerformedOn = PerformedOn.Value
+        };
+
+        // Перевірки лабораторної №6.
+        var validationResults = new List<ValidationResult>();
+
+        bool isValid = Validator.TryValidateObject(
+            workout,
+            new ValidationContext(workout),
+            validationResults,
+            validateAllProperties: true
+        );
+
+        if (!isValid)
+        {
+            error = string.Join(" ",
+                validationResults.Select(r => r.ErrorMessage));
+            return;
+        }
+
+        // Завантажуємо існуючий запис для безпечного оновлення.
+        var record = await context.Workouts
+            .FirstOrDefaultAsync(w => w.Id == Id);
+
+        if (record is null)
+        {
+            error = "Тренування не знайдено. Можливо, його видалено.";
+            return;
+        }
+
+        // Оновлюємо лише дозволені поля.
+        record.SportCategoryId = workout.SportCategoryId;
+        record.ExerciseId = workout.ExerciseId;
+
+        record.SportType = workout.SportType;
+        record.ExerciseName = workout.ExerciseName;
+
+        record.Type = workout.Type;
+        record.DurationMinutes = workout.DurationMinutes;
+        record.Distance = workout.Distance;
+        record.PerformedOn = workout.PerformedOn;
 
         try
         {
@@ -203,7 +404,7 @@ else
         }
         catch (DbUpdateConcurrencyException)
         {
-            error = "Не вдалося зберегти зміни. Запис було змінено або видалено. Оновіть сторінку.";
+            error = "Запис було змінено або видалено. Оновіть сторінку.";
             return;
         }
         catch (DbUpdateException ex)

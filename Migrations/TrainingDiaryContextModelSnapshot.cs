@@ -17,6 +17,38 @@ namespace TrainingDiary.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
+            modelBuilder.Entity("TrainingDiary.Models.Exercise", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Exercises");
+                });
+
+            modelBuilder.Entity("TrainingDiary.Models.SportCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SportCategories");
+                });
+
             modelBuilder.Entity("TrainingDiary.Models.Workout", b =>
                 {
                     b.Property<int>("Id")
@@ -29,6 +61,9 @@ namespace TrainingDiary.Migrations
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("ExerciseId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ExerciseName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -36,6 +71,9 @@ namespace TrainingDiary.Migrations
 
                     b.Property<DateTime>("PerformedOn")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("SportCategoryId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("SportType")
                         .IsRequired()
@@ -47,10 +85,41 @@ namespace TrainingDiary.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("SportCategoryId");
+
                     b.HasIndex("ExerciseName", "PerformedOn")
                         .IsUnique();
 
                     b.ToTable("Workouts");
+                });
+
+            modelBuilder.Entity("TrainingDiary.Models.Workout", b =>
+                {
+                    b.HasOne("TrainingDiary.Models.Exercise", "Exercise")
+                        .WithMany("Workouts")
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TrainingDiary.Models.SportCategory", "SportCategory")
+                        .WithMany("Workouts")
+                        .HasForeignKey("SportCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Exercise");
+
+                    b.Navigation("SportCategory");
+                });
+
+            modelBuilder.Entity("TrainingDiary.Models.Exercise", b =>
+                {
+                    b.Navigation("Workouts");
+                });
+
+            modelBuilder.Entity("TrainingDiary.Models.SportCategory", b =>
+                {
+                    b.Navigation("Workouts");
                 });
 #pragma warning restore 612, 618
         }

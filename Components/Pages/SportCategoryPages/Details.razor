@@ -1,0 +1,46 @@
+@page "/sportcategories/details"
+@using Microsoft.EntityFrameworkCore
+@using TrainingDiary.Models
+@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>SportCategory</h2>
+    <hr />
+    @if (sportcategory is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Name</dt>
+            <dd class="col-sm-10">@sportcategory.Name</dd>
+        </dl>
+        <div>
+            <a href="@($"/sportcategories/edit?id={sportcategory.Id}")">Edit</a> |
+            <a href="@($"/sportcategories")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private SportCategory? sportcategory;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        sportcategory = await context.SportCategories.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (sportcategory is null)
+        {
+            NavigationManager.NotFound();
+        }
+    }
+}

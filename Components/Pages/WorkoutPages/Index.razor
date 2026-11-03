@@ -1,35 +1,71 @@
+
 @page "/workouts"
+
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using TrainingDiary.Models
 @using TrainingDiary.Data
+
 @implements IAsyncDisposable
-@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 
-<PageTitle>Index</PageTitle>
+@inject IDbContextFactory<TrainingDiaryContext> DbFactory
 
-<h1>Index</h1>
+<PageTitle>Мої тренування</PageTitle>
+
+<h1>Мої тренування</h1>
 
 <p>
-    <a href="workouts/create">Create New</a>
+    <a href="/workouts/create"
+       class="btn btn-primary">
+        Додати тренування
+    </a>
 </p>
 
 <QuickGrid Class="table" Items="@PagedWorkouts">
-    <PropertyColumn Property="workout => workout.SportType" />
-    <PropertyColumn Property="workout => workout.ExerciseName" />
-    <PropertyColumn Property="workout => workout.Type" />
-    <PropertyColumn Property="workout => workout.DurationMinutes" />
-    <PropertyColumn Property="workout => workout.Distance" />
-    <PropertyColumn Property="workout => workout.PerformedOn" />
 
-    <TemplateColumn Context="workout">
-        <a href="@($"workouts/edit?id={workout.Id}")">Edit</a> |
-        <a href="@($"workouts/details?id={workout.Id}")">Details</a> |
-        <a href="@($"workouts/delete?id={workout.Id}")">Delete</a>
+    <TemplateColumn Title="Вид спорту" Context="workout">
+        @(workout.SportCategory?.Name ?? workout.SportType)
     </TemplateColumn>
+
+    <TemplateColumn Title="Назва вправи" Context="workout">
+        @(workout.Exercise?.Name ?? workout.ExerciseName)
+    </TemplateColumn>
+
+    <PropertyColumn Property="workout => workout.Type"
+                    Title="Категорія" />
+
+    <PropertyColumn Property="workout => workout.DurationMinutes"
+                    Title="Тривалість (хв)" />
+
+    <PropertyColumn Property="workout => workout.Distance"
+                    Title="Дистанція (км)" />
+
+    <PropertyColumn Property="workout => workout.PerformedOn"
+                    Title="Дата" 
+                    Format="dd.MM.yyyy" />
+
+    <TemplateColumn Title="Дії" Context="workout">
+
+        <a href="@($"/workouts/edit?id={workout.Id}")">
+            Edit
+        </a>
+        |
+
+        <a href="@($"/workouts/details?id={workout.Id}")">
+            Details
+        </a>
+        |
+
+        <a href="@($"/workouts/delete?id={workout.Id}")">
+            Delete
+        </a>
+
+    </TemplateColumn>
+
 </QuickGrid>
 
 <div class="mt-3 d-flex align-items-center gap-3">
+
     @if (CurrentPage > 1)
     {
         <a class="btn btn-outline-primary"
@@ -38,7 +74,9 @@
         </a>
     }
 
-    <span>Сторінка @CurrentPage з @TotalPages</span>
+    <span>
+        Сторінка @CurrentPage з @TotalPages
+    </span>
 
     @if (CurrentPage < TotalPages)
     {
@@ -47,34 +85,55 @@
             Далі
         </a>
     }
+
 </div>
 
-
 @code {
-    
-[SupplyParameterFromQuery(Name = "page")]
-private int? Page { get; set; }
 
-private const int PageSize = 5;
+    [SupplyParameterFromQuery(Name = "page")]
+    private int? Page { get; set; }
 
-private int TotalPages =>
-    Math.Max(1, (context.Workouts.Count() + PageSize - 1) / PageSize);
-
-private int CurrentPage =>
-    Math.Clamp(Page ?? 1, 1, TotalPages);
-
-private IQueryable<Workout> PagedWorkouts =>
-    context.Workouts
-        .OrderBy(w => w.Id)
-        .Skip((CurrentPage - 1) * PageSize)
-        .Take(PageSize);
+    private const int PageSize = 5;
 
     private TrainingDiaryContext context = default!;
+
+    private int TotalPages =>
+        Math.Max(
+            1,
+            (context.Workouts.Count() + PageSize - 1)
+            / PageSize
+        );
+
+    private int CurrentPage =>
+        Math.Clamp(Page ?? 1, 1, TotalPages);
+
+    private IQueryable<Workout> PagedWorkouts =>
+        context.Workouts
+
+            .AsNoTracking()
+
+            // Завантаження категорії спорту
+            .Include(w => w.SportCategory)
+
+            // Завантаження вправи
+            .Include(w => w.Exercise)
+
+            .OrderBy(w => w.Id)
+
+            .Skip((CurrentPage - 1) * PageSize)
+
+            .Take(PageSize);
 
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
     }
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        if (context is not null)
+        {
+            await context.DisposeAsync();
+        }
+    }
 }

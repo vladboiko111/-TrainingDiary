@@ -30,3 +30,61 @@ TrainingDiary — вебзастосунок Blazor для ведення щод
 ## Перевірка
 Команда: dotnet build
 Результат: Build succeeded.
+
+## Лабораторна робота №7
+### Зв'язки між моделями: довідники та діаграма класів
+
+У проєкті TrainingDiary створено два довідники:
+- SportCategory — категорії спорту.
+- Exercise — довідник вправ.
+
+Основна модель Workout має зовнішні ключі
+SportCategoryId та ExerciseId.
+
+### Діаграма класів
+
+```mermaid
+classDiagram
+    class Workout {
+        +int Id
+        +string SportType
+        +string ExerciseName
+        +WorkoutType Type
+        +int DurationMinutes
+        +decimal Distance
+        +DateTime PerformedOn
+        +int SportCategoryId
+        +int ExerciseId
+    }
+
+    class SportCategory {
+        +int Id
+        +string Name
+    }
+
+    class Exercise {
+        +int Id
+        +string Name
+    }
+
+    SportCategory "1" --> "0..*" Workout : категорія
+    Exercise "1" --> "0..*" Workout : вправа
+```
+
+### Результат
+
+Реалізовано зв'язки між моделями Workout,
+SportCategory та Exercise.
+
+Створено CRUD-сторінки для двох довідників.
+Додано по 5 записів до кожного довідника.
+
+У формах створення та редагування тренувань
+додано спадні списки категорій спорту та вправ.
+
+Для відображення пов'язаних даних
+використано Include().
+
+Збережено перевірки введених даних,
+обробку помилок і пагінацію тренувань.
+
