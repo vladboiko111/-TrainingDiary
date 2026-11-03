@@ -1,75 +1,150 @@
+
 @page "/workouts/edit"
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.Data.Sqlite
 @using TrainingDiary.Models
 @inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Edit</PageTitle>
+<PageTitle>Редагування тренування</PageTitle>
 
-<h1>Edit</h1>
-
-<h2>Workout</h2>
+<h1>Редагувати тренування</h1>
+<h2>Зміна інформації про тренування</h2>
 <hr />
+
 @if (Workout is null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Завантаження...</em></p>
 }
 else
 {
     <div class="row">
-        <div class="col-md-4">
-            <EditForm method="post" Model="Workout" OnValidSubmit="UpdateWorkout" FormName="edit" Enhance>
-                <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
-                <input type="hidden" name="Workout.Id" value="@Workout.Id" />
-                <div class="mb-3">
-                    <label for="sporttype" class="form-label">SportType:</label>
-                    <InputText id="sporttype" @bind-Value="Workout.SportType" class="form-control" />
-                    <ValidationMessage For="() => Workout.SportType" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="exercisename" class="form-label">ExerciseName:</label>
-                    <InputText id="exercisename" @bind-Value="Workout.ExerciseName" class="form-control" />
-                    <ValidationMessage For="() => Workout.ExerciseName" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="type" class="form-label">Type:</label>
-                    
-<InputSelect TValue="WorkoutType"
-             id="type"
-             @bind-Value="Workout.Type"
-             class="form-control">
-    @foreach (var type in Enum.GetValues<WorkoutType>())
-    {
-        <option value="@type">@type</option>
-    }
-</InputSelect>
+        <div class="col-md-6">
 
-                    <ValidationMessage For="() => Workout.Type" class="text-danger" />
-                </div>
+            <EditForm method="post"
+                      Model="Workout"
+                      OnValidSubmit="UpdateWorkout"
+                      FormName="edit">
+
+                <DataAnnotationsValidator />
+
+                <ValidationSummary class="text-danger"
+                                   role="alert" />
+
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @error
+                    </div>
+                }
+
+                <input type="hidden"
+                       name="Workout.Id"
+                       value="@Workout.Id" />
+
                 <div class="mb-3">
-                    <label for="durationminutes" class="form-label">DurationMinutes:</label>
-                    <InputNumber id="durationminutes" @bind-Value="Workout.DurationMinutes" class="form-control" />
-                    <ValidationMessage For="() => Workout.DurationMinutes" class="text-danger" />
+                    <label for="sporttype" class="form-label">
+                        Вид спорту:
+                    </label>
+
+                    <InputText id="sporttype"
+                               @bind-Value="Workout.SportType"
+                               class="form-control" />
+
+                    <ValidationMessage
+                        For="() => Workout.SportType"
+                        class="text-danger" />
                 </div>
+
                 <div class="mb-3">
-                    <label for="distance" class="form-label">Distance:</label>
-                    <InputNumber id="distance" @bind-Value="Workout.Distance" class="form-control" />
-                    <ValidationMessage For="() => Workout.Distance" class="text-danger" />
+                    <label for="exercisename" class="form-label">
+                        Назва вправи:
+                    </label>
+
+                    <InputText id="exercisename"
+                               @bind-Value="Workout.ExerciseName"
+                               class="form-control" />
+
+                    <ValidationMessage
+                        For="() => Workout.ExerciseName"
+                        class="text-danger" />
                 </div>
+
                 <div class="mb-3">
-                    <label for="performedon" class="form-label">PerformedOn:</label>
-                    <InputDate id="performedon" @bind-Value="Workout.PerformedOn" class="form-control" />
-                    <ValidationMessage For="() => Workout.PerformedOn" class="text-danger" />
+                    <label for="type" class="form-label">
+                        Категорія тренування:
+                    </label>
+
+                    <InputSelect TValue="WorkoutType"
+                                 id="type"
+                                 @bind-Value="Workout.Type"
+                                 class="form-control">
+
+                        @foreach (var type in Enum.GetValues<WorkoutType>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+
+                    </InputSelect>
+
+                    <ValidationMessage
+                        For="() => Workout.Type"
+                        class="text-danger" />
                 </div>
-                <button type="submit" class="btn btn-primary">Save</button>
+
+                <div class="mb-3">
+                    <label for="durationminutes" class="form-label">
+                        Тривалість (хвилини):
+                    </label>
+
+                    <InputNumber id="durationminutes"
+                                 @bind-Value="Workout.DurationMinutes"
+                                 class="form-control" />
+
+                    <ValidationMessage
+                        For="() => Workout.DurationMinutes"
+                        class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="distance" class="form-label">
+                        Дистанція (км):
+                    </label>
+
+                    <InputNumber id="distance"
+                                 @bind-Value="Workout.Distance"
+                                 class="form-control" />
+
+                    <ValidationMessage
+                        For="() => Workout.Distance"
+                        class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="performedon" class="form-label">
+                        Дата тренування:
+                    </label>
+
+                    <InputDate id="performedon"
+                               @bind-Value="Workout.PerformedOn"
+                               class="form-control" />
+
+                    <ValidationMessage
+                        For="() => Workout.PerformedOn"
+                        class="text-danger" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Зберегти зміни
+                </button>
+
             </EditForm>
         </div>
     </div>
 }
 
-<div>
-    <a href="/workouts">Back to List</a>
+<div class="mt-3">
+    <a href="/workouts">Назад до списку</a>
 </div>
 
 @code {
@@ -79,10 +154,14 @@ else
     [SupplyParameterFromForm]
     private Workout? Workout { get; set; }
 
+    private string? error;
+
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        Workout ??= await context.Workouts.FirstOrDefaultAsync(m => m.Id == Id);
+
+        Workout ??= await context.Workouts
+            .FirstOrDefaultAsync(w => w.Id == Id);
 
         if (Workout is null)
         {
@@ -90,12 +169,33 @@ else
         }
     }
 
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
     private async Task UpdateWorkout()
     {
+        error = null;
+
+        if (Workout is null)
+        {
+            return;
+        }
+
         using var context = DbFactory.CreateDbContext();
-        context.Attach(Workout!).State = EntityState.Modified;
+
+        var existingWorkout = await context.Workouts
+            .FirstOrDefaultAsync(w => w.Id == Id);
+
+        if (existingWorkout is null)
+        {
+            error = "Тренування не знайдено. Можливо, його вже видалено.";
+            return;
+        }
+
+        // Оновлюємо лише дозволені властивості.
+        existingWorkout.SportType = Workout.SportType;
+        existingWorkout.ExerciseName = Workout.ExerciseName;
+        existingWorkout.Type = Workout.Type;
+        existingWorkout.DurationMinutes = Workout.DurationMinutes;
+        existingWorkout.Distance = Workout.Distance;
+        existingWorkout.PerformedOn = Workout.PerformedOn;
 
         try
         {
@@ -103,22 +203,24 @@ else
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!WorkoutExists(Workout!.Id))
+            error = "Не вдалося зберегти зміни. Запис було змінено або видалено. Оновіть сторінку.";
+            return;
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.GetBaseException() is SqliteException sqliteEx &&
+                sqliteEx.SqliteExtendedErrorCode == 2067)
             {
-                NavigationManager.NotFound();
+                error = "Тренування з такою назвою та датою вже існує.";
             }
             else
             {
-                throw;
+                error = "Не вдалося зберегти зміни. Спробуйте ще раз.";
             }
+
+            return;
         }
 
         NavigationManager.NavigateTo("/workouts");
-    }
-
-    private bool WorkoutExists(int id)
-    {
-        using var context = DbFactory.CreateDbContext();
-        return context.Workouts.Any(e => e.Id == id);
     }
 }

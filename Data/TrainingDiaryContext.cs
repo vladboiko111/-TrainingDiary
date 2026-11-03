@@ -18,8 +18,18 @@ public class TrainingDiaryContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        // Налаштування збереження Distance у SQLite
         modelBuilder.Entity<Workout>()
             .Property(w => w.Distance)
             .HasConversion<double?>();
+
+        // Унікальний індекс для назви вправи та дати
+        modelBuilder.Entity<Workout>()
+            .HasIndex(w => new
+            {
+                w.ExerciseName,
+                w.PerformedOn
+            })
+            .IsUnique();
     }
 }
