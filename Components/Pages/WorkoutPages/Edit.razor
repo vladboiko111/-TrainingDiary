@@ -10,20 +10,27 @@
 @inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Редагування тренування</PageTitle>
+<PageTitle>Редагування тренування — Щоденник тренувань</PageTitle>
 
-<h1>Редагувати тренування</h1>
-<h2>Зміна інформації про тренування</h2>
+<h1>Редагування тренування</h1>
+
+<p class="text-muted">
+    Змініть необхідні дані та збережіть тренування.
+</p>
+
 <hr />
 
 @if (existingWorkout is null)
 {
-    <p><em>Тренування не знайдено.</em></p>
+    <div class="alert alert-warning">
+        Тренування не знайдено.
+    </div>
 }
 else
 {
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-12 col-md-7 col-lg-6">
+
             <form method="post"
                   @onsubmit="UpdateWorkout"
                   @formname="edit-workout-lab7">
@@ -43,7 +50,7 @@ else
 
                 <div class="mb-3">
                     <label for="category" class="form-label">
-                        Вид спорту:
+                        Вид спорту
                     </label>
 
                     <select id="category"
@@ -68,7 +75,7 @@ else
 
                 <div class="mb-3">
                     <label for="exercise" class="form-label">
-                        Назва вправи:
+                        Назва вправи
                     </label>
 
                     <select id="exercise"
@@ -93,7 +100,7 @@ else
 
                 <div class="mb-3">
                     <label for="type" class="form-label">
-                        Категорія тренування:
+                        Категорія тренування
                     </label>
 
                     <select id="type"
@@ -105,7 +112,7 @@ else
                         {
                             <option value="@type"
                                     selected="@(SelectedType == type)">
-                                @type
+                                @GetTypeName(type)
                             </option>
                         }
                     </select>
@@ -113,7 +120,7 @@ else
 
                 <div class="mb-3">
                     <label for="duration" class="form-label">
-                        Тривалість (хвилини):
+                        Тривалість (хв)
                     </label>
 
                     <input type="number"
@@ -128,7 +135,7 @@ else
 
                 <div class="mb-3">
                     <label for="distance" class="form-label">
-                        Дистанція (км):
+                        Дистанція (км)
                     </label>
 
                     <input type="number"
@@ -140,14 +147,14 @@ else
                            step="any"
                            class="form-control" />
 
-                    <small class="text-muted">
+                    <div class="form-text">
                         Для кардіотренування дистанція обов'язкова.
-                    </small>
+                    </div>
                 </div>
 
                 <div class="mb-3">
                     <label for="performedon" class="form-label">
-                        Дата тренування:
+                        Дата тренування
                     </label>
 
                     <input type="date"
@@ -158,17 +165,20 @@ else
                            required />
                 </div>
 
-                <button type="submit" class="btn btn-primary">
-                    Зберегти зміни
-                </button>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        Зберегти зміни
+                    </button>
+
+                    <a href="/workouts"
+                       class="btn btn-outline-secondary">
+                        Скасувати
+                    </a>
+                </div>
             </form>
         </div>
     </div>
 }
-
-<div class="mt-3">
-    <a href="/workouts">Назад до списку</a>
-</div>
 
 @code {
     [SupplyParameterFromQuery]
@@ -202,9 +212,21 @@ else
 
     private string? error;
 
+    private static string GetTypeName(WorkoutType type)
+    {
+        return type switch
+        {
+            WorkoutType.Strength => "Силові",
+            WorkoutType.Cardio => "Кардіо",
+            WorkoutType.Recovery => "Відновлення",
+            _ => type.ToString()
+        };
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
 
         sportCategories = await context.SportCategories
             .AsNoTracking()
@@ -308,7 +330,8 @@ else
             }
         }
 
-        using var context = DbFactory.CreateDbContext();
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
 
         var category = await context.SportCategories
             .AsNoTracking()
@@ -329,15 +352,14 @@ else
         var workout = new Workout
         {
             Id = Id,
-
             SportCategoryId = category.Id,
             ExerciseId = exercise.Id,
 
             SportType = category.Name,
             ExerciseName = exercise.Name,
 
-            // ЛР №8: автоматичне заповнення пошукового поля.
-            ExerciseNameSearch = exercise.Name.Trim().ToLowerInvariant(),
+            ExerciseNameSearch =
+                exercise.Name.Trim().ToLowerInvariant(),
 
             Type = SelectedType.Value,
             DurationMinutes = DurationMinutes.Value,
@@ -375,8 +397,6 @@ else
 
         record.SportType = workout.SportType;
         record.ExerciseName = workout.ExerciseName;
-
-        // ЛР №8: оновлюємо пошукове поле під час редагування.
         record.ExerciseNameSearch = workout.ExerciseNameSearch;
 
         record.Type = workout.Type;
@@ -408,6 +428,7 @@ else
             return;
         }
 
-        NavigationManager.NavigateTo("/workouts");
+        // Повідомлення про успішне редагування.
+        NavigationManager.NavigateTo("/workouts?saved=true");
     }
 }

@@ -10,14 +10,18 @@
 @inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Створення тренування</PageTitle>
+<PageTitle>Додати тренування — Щоденник тренувань</PageTitle>
 
 <h1>Додати тренування</h1>
-<h2>Нове тренування</h2>
+
+<p class="text-muted">
+    Заповніть інформацію про нове тренування.
+</p>
+
 <hr />
 
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-12 col-md-7 col-lg-6">
 
         <form method="post"
               @onsubmit="AddWorkout"
@@ -32,10 +36,9 @@
                 </div>
             }
 
-            <!-- Вибір категорії спорту -->
             <div class="mb-3">
                 <label for="category" class="form-label">
-                    Вид спорту:
+                    Вид спорту
                 </label>
 
                 <select id="category"
@@ -43,7 +46,9 @@
                         class="form-select"
                         required>
 
-                    <option value="">-- Оберіть вид спорту --</option>
+                    <option value="">
+                        -- Оберіть вид спорту --
+                    </option>
 
                     @foreach (var category in sportCategories)
                     {
@@ -52,14 +57,12 @@
                             @category.Name
                         </option>
                     }
-
                 </select>
             </div>
 
-            <!-- Вибір вправи -->
             <div class="mb-3">
                 <label for="exercise" class="form-label">
-                    Назва вправи:
+                    Назва вправи
                 </label>
 
                 <select id="exercise"
@@ -67,7 +70,9 @@
                         class="form-select"
                         required>
 
-                    <option value="">-- Оберіть вправу --</option>
+                    <option value="">
+                        -- Оберіть вправу --
+                    </option>
 
                     @foreach (var exercise in exercises)
                     {
@@ -76,35 +81,32 @@
                             @exercise.Name
                         </option>
                     }
-
                 </select>
             </div>
 
-            <!-- Тип тренування -->
             <div class="mb-3">
                 <label for="type" class="form-label">
-                    Категорія тренування:
+                    Категорія тренування
                 </label>
 
                 <select id="type"
                         name="SelectedType"
-                        class="form-select">
+                        class="form-select"
+                        required>
 
                     @foreach (var type in Enum.GetValues<WorkoutType>())
                     {
                         <option value="@type"
                                 selected="@(SelectedType == type)">
-                            @type
+                            @GetTypeName(type)
                         </option>
                     }
-
                 </select>
             </div>
 
-            <!-- Тривалість -->
             <div class="mb-3">
                 <label for="duration" class="form-label">
-                    Тривалість (хвилини):
+                    Тривалість (хв)
                 </label>
 
                 <input type="number"
@@ -117,10 +119,9 @@
                        required />
             </div>
 
-            <!-- Дистанція -->
             <div class="mb-3">
                 <label for="distance" class="form-label">
-                    Дистанція (км):
+                    Дистанція (км)
                 </label>
 
                 <input type="number"
@@ -129,40 +130,42 @@
                        value="@DistanceText"
                        min="0"
                        max="1000"
-                       step="0.01"
+                       step="any"
                        class="form-control" />
 
-                <small class="text-muted">
+                <div class="form-text">
                     Для кардіотренування дистанція обов'язкова.
-                </small>
+                </div>
             </div>
 
-            <!-- Дата -->
             <div class="mb-3">
                 <label for="performedon" class="form-label">
-                    Дата тренування:
+                    Дата тренування
                 </label>
 
                 <input type="date"
                        id="performedon"
                        name="PerformedOn"
-                       value="@PerformedOn.ToString("yyyy-MM-dd")"
+                       value="@((PerformedOn ?? DateTime.Today).ToString("yyyy-MM-dd"))"
                        class="form-control"
                        required />
             </div>
 
-            <button type="submit"
-                    class="btn btn-primary"
-                    disabled="@(sportCategories.Count == 0 || exercises.Count == 0)">
-                Зберегти тренування
-            </button>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="submit"
+                        class="btn btn-primary"
+                        disabled="@(sportCategories.Count == 0 || exercises.Count == 0)">
+                    Зберегти тренування
+                </button>
+
+                <a href="/workouts"
+                   class="btn btn-outline-secondary">
+                    Скасувати
+                </a>
+            </div>
 
         </form>
     </div>
-</div>
-
-<div class="mt-3">
-    <a href="/workouts">Назад до списку</a>
 </div>
 
 @code {
@@ -175,8 +178,9 @@
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
     private int? SelectedExerciseId { get; set; }
 
+    // Без ініціалізатора — виправлення BL0008.
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
-    private WorkoutType SelectedType { get; set; } = WorkoutType.Strength;
+    private WorkoutType SelectedType { get; set; }
 
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
     private int DurationMinutes { get; set; }
@@ -184,14 +188,16 @@
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
     private string? DistanceText { get; set; }
 
+    // Nullable для перевірки відсутньої дати.
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
-    private DateTime PerformedOn { get; set; } = DateTime.Today;
+    private DateTime? PerformedOn { get; set; }
 
     private string? error;
 
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
 
         sportCategories = await context.SportCategories
             .AsNoTracking()
@@ -204,6 +210,17 @@
             .ToListAsync();
     }
 
+    private static string GetTypeName(WorkoutType type)
+    {
+        return type switch
+        {
+            WorkoutType.Strength => "Силові",
+            WorkoutType.Cardio => "Кардіо",
+            WorkoutType.Recovery => "Відновлення",
+            _ => type.ToString()
+        };
+    }
+
     private async Task AddWorkout()
     {
         error = null;
@@ -212,6 +229,18 @@
             !SelectedExerciseId.HasValue)
         {
             error = "Оберіть вид спорту та вправу.";
+            return;
+        }
+
+        if (!Enum.IsDefined(typeof(WorkoutType), SelectedType))
+        {
+            error = "Оберіть правильну категорію тренування.";
+            return;
+        }
+
+        if (!PerformedOn.HasValue)
+        {
+            error = "Вкажіть дату тренування.";
             return;
         }
 
@@ -238,21 +267,18 @@
             }
         }
 
-        if (!Enum.IsDefined(typeof(WorkoutType), SelectedType))
-        {
-            error = "Оберіть правильну категорію тренування.";
-            return;
-        }
-
-        using var context = DbFactory.CreateDbContext();
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
 
         var category = await context.SportCategories
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == SelectedCategoryId.Value);
+            .FirstOrDefaultAsync(c =>
+                c.Id == SelectedCategoryId.Value);
 
         var exercise = await context.Exercises
             .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == SelectedExerciseId.Value);
+            .FirstOrDefaultAsync(e =>
+                e.Id == SelectedExerciseId.Value);
 
         if (category is null || exercise is null)
         {
@@ -265,20 +291,19 @@
             SportCategoryId = category.Id,
             ExerciseId = exercise.Id,
 
-            // Сумісність із попередніми лабораторними.
             SportType = category.Name,
             ExerciseName = exercise.Name,
 
-            // ЛР №8: нормалізована назва для пошуку.
-            ExerciseNameSearch = exercise.Name.Trim().ToLowerInvariant(),
+            // Службове поле пошуку з ЛР №8.
+            ExerciseNameSearch =
+                exercise.Name.Trim().ToLowerInvariant(),
 
             Type = SelectedType,
             DurationMinutes = DurationMinutes,
             Distance = distance,
-            PerformedOn = PerformedOn
+            PerformedOn = PerformedOn.Value
         };
 
-        // Перевірки з лабораторної №6.
         var validationResults = new List<ValidationResult>();
 
         bool isValid = Validator.TryValidateObject(
@@ -315,6 +340,7 @@
             return;
         }
 
-        NavigationManager.NavigateTo("/workouts");
+        // ЛР №10: повідомлення після успішного збереження.
+        NavigationManager.NavigateTo("/workouts?saved=true");
     }
 }

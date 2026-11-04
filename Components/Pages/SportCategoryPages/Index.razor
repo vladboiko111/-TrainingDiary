@@ -1,36 +1,94 @@
+
 @page "/sportcategories"
+
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using TrainingDiary.Models
 @using TrainingDiary.Data
-@implements IAsyncDisposable
-@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 
-<PageTitle>Index</PageTitle>
+@inject IDbContextFactory<TrainingDiaryContext> DbFactory
 
-<h1>Index</h1>
+<PageTitle>Категорії спорту — Щоденник тренувань</PageTitle>
 
-<p>
-    <a href="sportcategories/create">Create New</a>
+<h1>Категорії спорту</h1>
+
+<p class="text-muted">
+    Керуйте категоріями спорту, які використовуються
+    під час створення тренувань.
 </p>
 
-<QuickGrid Class="table" Items="context.SportCategories">
-    <PropertyColumn Property="sportcategory => sportcategory.Name" />
+<p>
+    <a href="/sportcategories/create"
+       class="btn btn-primary">
+        + Додати категорію
+    </a>
+</p>
 
-    <TemplateColumn Context="sportcategory">
-        <a href="@($"sportcategories/edit?id={sportcategory.Id}")">Edit</a> |
-        <a href="@($"sportcategories/details?id={sportcategory.Id}")">Details</a> |
-        <a href="@($"sportcategories/delete?id={sportcategory.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+@if (categories.Count == 0)
+{
+    <div class="alert alert-info" role="status">
+        <h2 class="h5">Категорій спорту поки немає</h2>
+
+        <p>
+            Створіть першу категорію, щоб використовувати
+            її під час додавання тренувань.
+        </p>
+
+        <a href="/sportcategories/create"
+           class="btn btn-outline-primary">
+            Створити категорію
+        </a>
+    </div>
+}
+else
+{
+    <div class="table-responsive"
+         role="region"
+         aria-label="Таблиця категорій спорту"
+         tabindex="0">
+
+        <QuickGrid Class="table table-striped table-hover"
+                   Items="@categories.AsQueryable()">
+
+            <PropertyColumn Property="category => category.Name"
+                            Title="Назва категорії" />
+
+            <TemplateColumn Title="Дії" Context="category">
+                <div class="d-flex flex-wrap gap-2">
+
+                    <a href="@($"/sportcategories/edit?id={category.Id}")"
+                       class="btn btn-sm btn-outline-primary">
+                        Редагувати
+                    </a>
+
+                    <a href="@($"/sportcategories/details?id={category.Id}")"
+                       class="btn btn-sm btn-outline-secondary">
+                        Деталі
+                    </a>
+
+                    <a href="@($"/sportcategories/delete?id={category.Id}")"
+                       class="btn btn-sm btn-outline-danger">
+                        Видалити
+                    </a>
+
+                </div>
+            </TemplateColumn>
+
+        </QuickGrid>
+    </div>
+}
 
 @code {
-    private TrainingDiaryContext context = default!;
+    private List<SportCategory> categories = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
-    }
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+        categories = await context.SportCategories
+            .AsNoTracking()
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+    }
 }

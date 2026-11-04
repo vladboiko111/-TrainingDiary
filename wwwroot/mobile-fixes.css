@@ -1,0 +1,99 @@
+
+/* Лабораторна №10: адаптивність */
+
+html,
+body {
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.page,
+main,
+article,
+.content {
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 640.98px) {
+
+    .page {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .page main {
+        width: 100%;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .page article.content {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding: 12px !important;
+    }
+
+    .content h1,
+    .content h2,
+    .content h3,
+    .content p {
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+
+    .content .card,
+    .content .card-body,
+    .content .alert {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .content .row {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .content .row > * {
+        min-width: 0;
+    }
+
+    .content input,
+    .content select,
+    .content textarea {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    /* Прокручується таблиця, а не сторінка */
+    .content .table-responsive {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .content .table-responsive table {
+        width: max-content;
+        min-width: 100%;
+    }
+
+    .content .table-responsive th,
+    .content .table-responsive td {
+        white-space: nowrap;
+    }
+
+    .content .btn {
+        max-width: 100%;
+        white-space: normal;
+    }
+}

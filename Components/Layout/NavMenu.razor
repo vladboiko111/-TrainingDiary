@@ -1,20 +1,27 @@
 ﻿
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">
+        <a class="navbar-brand" href="/">
             Щоденник тренувань
         </a>
     </div>
 </div>
 
 <input type="checkbox"
-       title="Navigation menu"
+       title="Відкрити або закрити меню"
        class="navbar-toggler" />
 
 <div class="nav-scrollable">
-    <nav class="nav flex-column">
+    <nav class="nav flex-column"
+         aria-label="Основна навігація">
 
-        <!-- Головна -->
+        <!-- Основні сторінки -->
+        <div class="px-3 pt-3 pb-2">
+            <small class="text-white-50">
+                ОСНОВНЕ
+            </small>
+        </div>
+
         <div class="nav-item px-3">
             <NavLink class="nav-link"
                      href=""
@@ -25,7 +32,6 @@
             </NavLink>
         </div>
 
-        <!-- Мої тренування -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="workouts">
                 <span class="bi bi-list-check-nav-menu"
@@ -34,7 +40,13 @@
             </NavLink>
         </div>
 
-        <!-- Статистика -->
+        <!-- Аналітика -->
+        <div class="px-3 pt-3 pb-2">
+            <small class="text-white-50">
+                АНАЛІТИКА
+            </small>
+        </div>
+
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="statistics">
                 <span class="bi bi-bar-chart-fill-nav-menu"
@@ -43,7 +55,6 @@
             </NavLink>
         </div>
 
-        <!-- Лабораторна №9: зведення -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="summary">
                 <span class="bi bi-table"
@@ -52,7 +63,13 @@
             </NavLink>
         </div>
 
-        <!-- Види спорту та вправи -->
+        <!-- Довідники -->
+        <div class="px-3 pt-3 pb-2">
+            <small class="text-white-50">
+                ДОВІДНИКИ
+            </small>
+        </div>
+
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="sports">
                 <span class="bi bi-list-nested-nav-menu"
@@ -61,7 +78,6 @@
             </NavLink>
         </div>
 
-        <!-- Категорії спорту -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="sportcategories">
                 <span class="bi bi-tags"
@@ -70,7 +86,6 @@
             </NavLink>
         </div>
 
-        <!-- Довідник вправ -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="exercises">
                 <span class="bi bi-list-check"

@@ -8,24 +8,43 @@
 @inject IDbContextFactory<TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Видалення тренування</PageTitle>
+<PageTitle>Видалення тренування — Щоденник тренувань</PageTitle>
 
 <h1>Видалення тренування</h1>
 
-<p>Ви впевнені, що хочете видалити це тренування?</p>
-
-<h2>Інформація про тренування</h2>
-<hr />
-
 @if (workout is null)
 {
-    <p><em>Тренування не знайдено.</em></p>
+    <div class="alert alert-warning" role="alert">
+        Тренування не знайдено.
+        Можливо, його вже було видалено.
+    </div>
+
+    <a href="/workouts" class="btn btn-outline-primary">
+        Повернутися до тренувань
+    </a>
 }
 else
 {
-    <WorkoutCard Workout="workout"
-                 Caption="Запис для видалення"
-                 ShowDetails="false" />
+    <div class="alert alert-warning" role="alert">
+        <h2 class="h5">
+            Ви впевнені, що хочете видалити це тренування?
+        </h2>
+
+        <p class="mb-0">
+            Після видалення запис зникне зі щоденника.
+            Цю дію неможливо скасувати через інтерфейс.
+        </p>
+    </div>
+
+    <h2 class="h4 mt-4">Інформація про запис</h2>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <WorkoutCard Workout="workout"
+                         Caption="Запис для видалення"
+                         ShowDetails="true" />
+        </div>
+    </div>
 
     @if (!string.IsNullOrEmpty(error))
     {
@@ -44,62 +63,61 @@ else
                name="WorkoutId"
                value="@workout.Id" />
 
-        <button type="submit" class="btn btn-danger">
-            Видалити
-        </button>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="submit"
+                    class="btn btn-danger">
+                Так, видалити тренування
+            </button>
 
-        <a href="/workouts" class="btn btn-secondary ms-2">
-            Назад до списку
-        </a>
+            <a href="/workouts"
+               class="btn btn-outline-secondary">
+                Скасувати
+            </a>
+        </div>
     </form>
 }
 
 @code {
-    private Workout? workout;
-    private string? error;
-
     [SupplyParameterFromQuery]
     private int Id { get; set; }
 
     [SupplyParameterFromForm(FormName = "delete-workout-lab7")]
     private int? WorkoutId { get; set; }
 
+    private Workout? workout;
+    private string? error;
+
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
 
         workout = await context.Workouts
             .AsNoTracking()
             .Include(w => w.SportCategory)
             .Include(w => w.Exercise)
             .FirstOrDefaultAsync(w => w.Id == Id);
-
-        if (workout is null)
-        {
-            NavigationManager.NotFound();
-        }
     }
 
     private async Task DeleteWorkout()
     {
         error = null;
 
-        // Перевіряємо, що надісланий ID збігається
-        // із записом, відкритим для видалення.
         if (!WorkoutId.HasValue || WorkoutId.Value != Id)
         {
-            error = "Некоректний ідентифікатор тренування.";
+            error = "Невірний ідентифікатор тренування.";
             return;
         }
 
-        using var context = DbFactory.CreateDbContext();
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
 
         var record = await context.Workouts
             .FirstOrDefaultAsync(w => w.Id == Id);
 
         if (record is null)
         {
-            error = "Тренування вже видалено або не знайдено.";
+            error = "Запис уже видалено або його не знайдено.";
             return;
         }
 
@@ -110,7 +128,7 @@ else
         }
         catch (DbUpdateConcurrencyException)
         {
-            error = "Тренування вже видалено або змінено.";
+            error = "Запис уже було змінено або видалено.";
             return;
         }
         catch (DbUpdateException)
@@ -119,6 +137,6 @@ else
             return;
         }
 
-        NavigationManager.NavigateTo("/workouts");
+        NavigationManager.NavigateTo("/workouts?deleted=true");
     }
 }

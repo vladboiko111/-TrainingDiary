@@ -1,36 +1,94 @@
+
 @page "/exercises"
+
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using TrainingDiary.Models
 @using TrainingDiary.Data
-@implements IAsyncDisposable
-@inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 
-<PageTitle>Index</PageTitle>
+@inject IDbContextFactory<TrainingDiaryContext> DbFactory
 
-<h1>Index</h1>
+<PageTitle>Довідник вправ — Щоденник тренувань</PageTitle>
 
-<p>
-    <a href="exercises/create">Create New</a>
+<h1>Довідник вправ</h1>
+
+<p class="text-muted">
+    Переглядайте та редагуйте вправи,
+    які використовуються у ваших тренуваннях.
 </p>
 
-<QuickGrid Class="table" Items="context.Exercises">
-    <PropertyColumn Property="exercise => exercise.Name" />
+<p>
+    <a href="/exercises/create"
+       class="btn btn-primary">
+        + Додати вправу
+    </a>
+</p>
 
-    <TemplateColumn Context="exercise">
-        <a href="@($"exercises/edit?id={exercise.Id}")">Edit</a> |
-        <a href="@($"exercises/details?id={exercise.Id}")">Details</a> |
-        <a href="@($"exercises/delete?id={exercise.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+@if (exercises.Count == 0)
+{
+    <div class="alert alert-info" role="status">
+        <h2 class="h5">Вправ поки немає</h2>
+
+        <p>
+            Створіть першу вправу, щоб використовувати
+            її під час запису тренувань.
+        </p>
+
+        <a href="/exercises/create"
+           class="btn btn-outline-primary">
+            Створити вправу
+        </a>
+    </div>
+}
+else
+{
+    <div class="table-responsive"
+         role="region"
+         aria-label="Таблиця вправ"
+         tabindex="0">
+
+        <QuickGrid Class="table table-striped table-hover"
+                   Items="@exercises.AsQueryable()">
+
+            <PropertyColumn Property="exercise => exercise.Name"
+                            Title="Назва вправи" />
+
+            <TemplateColumn Title="Дії" Context="exercise">
+                <div class="d-flex flex-wrap gap-2">
+
+                    <a href="@($"/exercises/edit?id={exercise.Id}")"
+                       class="btn btn-sm btn-outline-primary">
+                        Редагувати
+                    </a>
+
+                    <a href="@($"/exercises/details?id={exercise.Id}")"
+                       class="btn btn-sm btn-outline-secondary">
+                        Деталі
+                    </a>
+
+                    <a href="@($"/exercises/delete?id={exercise.Id}")"
+                       class="btn btn-sm btn-outline-danger">
+                        Видалити
+                    </a>
+
+                </div>
+            </TemplateColumn>
+
+        </QuickGrid>
+    </div>
+}
 
 @code {
-    private TrainingDiaryContext context = default!;
+    private List<Exercise> exercises = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
-    }
+        await using var context =
+            await DbFactory.CreateDbContextAsync();
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+        exercises = await context.Exercises
+            .AsNoTracking()
+            .OrderBy(e => e.Name)
+            .ToListAsync();
+    }
 }

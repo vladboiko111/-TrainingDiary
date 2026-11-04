@@ -1,50 +1,108 @@
 ﻿
 @page "/"
 
-<PageTitle>Щоденник тренувань</PageTitle>
+<PageTitle>Головна — Щоденник тренувань</PageTitle>
 
-<h1>🏋️ Щоденник тренувань</h1>
+<div class="mb-4">
+    <h1>🏋️ Щоденник тренувань</h1>
 
-<p class="lead">
-    Вітаємо у вашому персональному щоденнику тренувань!
-</p>
+    <p class="lead text-muted">
+        Вітаємо у вашому персональному щоденнику тренувань!
+        Записуйте свої результати, переглядайте статистику
+        та стежте за прогресом.
+    </p>
 
-<hr />
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <a href="/workouts/create" class="btn btn-primary">
+            + Додати тренування
+        </a>
 
-<h3>Мої тренування</h3>
+        <a href="/workouts" class="btn btn-outline-primary">
+            Переглянути тренування
+        </a>
 
-<div class="row mt-4">
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5>💪 Силові тренування</h5>
-                <p>Вправи для розвитку сили та м'язів.</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5>🏃 Кардіо</h5>
-                <p>Біг, велосипед та витривалість.</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5>🧘 Відновлення</h5>
-                <p>Розтяжка, йога та відпочинок.</p>
-            </div>
-        </div>
+        <a href="/summary" class="btn btn-outline-secondary">
+            Переглянути зведення
+        </a>
     </div>
 </div>
 
-<h3 class="mt-4">Моя мета</h3>
+<hr />
 
-<p>
-    Регулярно тренуватися, відстежувати результати
-    та покращувати фізичну форму.
-</p>
+<h2 class="mb-3">Основні напрямки тренувань</h2>
+
+<div class="row g-3">
+
+    <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h3 class="h5 card-title">
+                    💪 Силові тренування
+                </h3>
+
+                <p class="card-text text-muted">
+                    Розвивайте силу та зміцнюйте м'язи.
+                    Фіксуйте виконані вправи й тривалість.
+                </p>
+
+                <a href="/workouts"
+                   class="btn btn-sm btn-outline-primary">
+                    Мої записи
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h3 class="h5 card-title">
+                    🏃 Кардіо
+                </h3>
+
+                <p class="card-text text-muted">
+                    Відстежуйте біг, велосипедні тренування,
+                    дистанцію та витривалість.
+                </p>
+
+                <a href="/statistics"
+                   class="btn btn-sm btn-outline-primary">
+                    Переглянути статистику
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h3 class="h5 card-title">
+                    🧘 Відновлення
+                </h3>
+
+                <p class="card-text text-muted">
+                    Плануйте відпочинок, розтяжку
+                    та відновлювальні тренування.
+                </p>
+
+                <a href="/workouts/create"
+                   class="btn btn-sm btn-outline-primary">
+                    Додати запис
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card mt-4 border-0 bg-light">
+    <div class="card-body">
+        <h2 class="h4">🎯 Моя мета</h2>
+
+        <p class="mb-0">
+            Регулярно тренуватися, відстежувати результати,
+            покращувати фізичну форму та досягати
+            поставлених цілей.
+        </p>
+    </div>
+</div>
