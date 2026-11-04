@@ -131,3 +131,41 @@ Skip, Take, CountAsync та ToListAsync.
 
 Збережено функціональність лабораторних №3–9.
 
+
+## Лабораторна робота №11 — Мінімальний вебсервіс
+
+У проєкт TrainingDiary додано мінімальний API на ASP.NET Core 10.
+
+### Кінцеві точки
+
+| Метод | Адреса | Призначення |
+|---|---|---|
+| GET | /api/workouts | Отримати список тренувань |
+| GET | /api/workouts/{id} | Отримати тренування за ID |
+| GET | /api/summary | Отримати загальну статистику |
+
+### Приклади звернень
+
+GET http://localhost:5030/api/workouts
+
+GET http://localhost:5030/api/workouts/5
+
+GET http://localhost:5030/api/workouts/99999
+
+GET http://localhost:5030/api/summary
+
+### Документація
+
+OpenAPI: http://localhost:5030/openapi/v1.json
+
+Scalar: http://localhost:5030/scalar/v1
+
+### Перевірка
+
+- Дані повертаються у форматі JSON.
+- Для існуючого запису повертається HTTP 200.
+- Для неіснуючого запису повертається HTTP 404.
+- Загальна статистика містить кількість тренувань,
+  сумарну та середню тривалість.
+- OpenAPI та Scalar доступні у середовищі Development.
+

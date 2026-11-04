@@ -1,38 +1,175 @@
 
 using Microsoft.EntityFrameworkCore;
-using TrainingDiary.Data;
+using Scalar.AspNetCore;
+using TrainingDiary.Api;
 using TrainingDiary.Components;
+using TrainingDiary.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Компоненти Blazor
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddDbContextFactory<TrainingDiaryContext>(options =>
-    options.UseSqlite("Data Source=trainingdiary.db"));
+// База даних SQLite
+builder.Services.AddDbContextFactory<TrainingDiaryContext>(
+    options =>
+        options.UseSqlite("Data Source=trainingdiary.db"));
 
+// QuickGrid
 builder.Services.AddQuickGridEntityFrameworkAdapter();
 
+// Сторінка помилок бази даних
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+// ЛР №11: OpenAPI
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Налаштування середовища
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler(
+        "/Error",
+        createScopeForErrors: true);
+
     app.UseHsts();
     app.UseMigrationsEndPoint();
 }
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
+else
+{
+    // Документація доступна у режимі Development
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
+app.UseStatusCodePagesWithReExecute(
+    "/not-found",
+    createScopeForStatusCodePages: true);
+
+app.UseHttpsRedirection();
 app.UseAntiforgery();
 
+// Статичні файли
 app.MapStaticAssets();
+
+// Сторінки Blazor
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// ========================================
+// ЛАБОРАТОРНА РОБОТА №11
+// Мінімальний вебсервіс
+// ========================================
+
+// Спільний префікс API
+var api = app.MapGroup("/api")
+    .WithTags("TrainingDiary API");
+
+// 1. Отримати всі тренування
+api.MapGet("/workouts",
+    async (
+        IDbContextFactory<TrainingDiaryContext> factory) =>
+    {
+        await using var db =
+            await factory.CreateDbContextAsync();
+
+        var workouts = await db.Workouts
+            .AsNoTracking()
+            .OrderBy(w => w.Id)
+            .ToListAsync();
+
+        var result = workouts
+            .Select(w => new WorkoutDto(
+                w.Id,
+                w.SportType,
+                w.ExerciseName,
+                w.Type.ToString(),
+                w.DurationMinutes,
+                w.Distance,
+                w.PerformedOn
+            ))
+            .ToList();
+
+        return Results.Ok(result);
+    })
+    .WithName("GetWorkouts")
+    .WithSummary("Отримати всі тренування")
+    .WithDescription(
+        "Повертає список тренувань у форматі JSON.")
+    .Produces<List<WorkoutDto>>(StatusCodes.Status200OK);
+
+// 2. Отримати тренування за ID
+api.MapGet("/workouts/{id:int}",
+    async (
+        int id,
+        IDbContextFactory<TrainingDiaryContext> factory) =>
+    {
+        await using var db =
+            await factory.CreateDbContextAsync();
+
+        var workout = await db.Workouts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workout is null)
+        {
+            return Results.NotFound();
+        }
+
+        var result = new WorkoutDto(
+            workout.Id,
+            workout.SportType,
+            workout.ExerciseName,
+            workout.Type.ToString(),
+            workout.DurationMinutes,
+            workout.Distance,
+            workout.PerformedOn
+        );
+
+        return Results.Ok(result);
+    })
+    .WithName("GetWorkoutById")
+    .WithSummary("Отримати тренування за ID")
+    .WithDescription(
+        "Повертає тренування або код 404, якщо запис не знайдено.")
+    .Produces<WorkoutDto>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status404NotFound);
+
+// 3. Загальне зведення
+api.MapGet("/summary",
+    async (
+        IDbContextFactory<TrainingDiaryContext> factory) =>
+    {
+        await using var db =
+            await factory.CreateDbContextAsync();
+
+        var totalWorkouts =
+            await db.Workouts.CountAsync();
+
+        var totalMinutes =
+            await db.Workouts.SumAsync(
+                w => (int?)w.DurationMinutes) ?? 0;
+
+        var averageMinutes = totalWorkouts == 0
+            ? 0
+            : Math.Round(
+                (double)totalMinutes / totalWorkouts,
+                2);
+
+        var result = new SummaryRow(
+            totalWorkouts,
+            totalMinutes,
+            averageMinutes
+        );
+
+        return Results.Ok(result);
+    })
+    .WithName("GetWorkoutSummary")
+    .WithSummary("Отримати зведення тренувань")
+    .WithDescription(
+        "Повертає кількість тренувань, сумарну та середню тривалість.")
+    .Produces<SummaryRow>(StatusCodes.Status200OK);
 
 app.Run();

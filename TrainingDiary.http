@@ -1,0 +1,22 @@
+
+@host = http://localhost:5030
+
+### 1. Отримати всі тренування
+GET {{host}}/api/workouts
+Accept: application/json
+
+### 2. Отримати тренування за ID
+GET {{host}}/api/workouts/5
+Accept: application/json
+
+### 3. Перевірка неіснуючого запису — 404
+GET {{host}}/api/workouts/99999
+Accept: application/json
+
+### 4. Отримати зведення
+GET {{host}}/api/summary
+Accept: application/json
+
+### 5. Документація OpenAPI
+GET {{host}}/openapi/v1.json
+Accept: application/json
