@@ -1,3 +1,4 @@
+
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
@@ -7,20 +8,32 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
+  <!-- ЛР №12: тести збираються окремим проєктом -->
+  <ItemGroup>
+    <Compile Remove="TrainingDiary.Tests/**/*.cs" />
+    <Content Remove="TrainingDiary.Tests/**" />
+    <None Remove="TrainingDiary.Tests/**" />
+    <EmbeddedResource Remove="TrainingDiary.Tests/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="10.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid.EntityFrameworkAdapter" Version="10.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.*" />
+
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
+
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.14">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.*" />
     <PackageReference Include="NuGet.Packaging" Version="6.12.5" />
     <PackageReference Include="NuGet.Protocol" Version="6.12.5" />
