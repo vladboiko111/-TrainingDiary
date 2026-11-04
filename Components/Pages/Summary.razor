@@ -1,0 +1,179 @@
+
+@page "/summary"
+
+@using Microsoft.EntityFrameworkCore
+@using TrainingDiary.Data
+@using TrainingDiary.Services
+
+@inject IDbContextFactory<TrainingDiaryContext> DbFactory
+@inject ILogger<Summary> Logger
+@inject IWebHostEnvironment Environment
+
+<PageTitle>Зведення тренувань</PageTitle>
+
+<h1>Зведення тренувань</h1>
+
+<p class="text-muted">
+    Підсумкова статистика тренувань за видами спорту
+    та місяцями.
+</p>
+
+@if (isLoading)
+{
+    <p><em>Завантаження даних...</em></p>
+}
+else if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger">
+        <strong>Помилка завантаження зведень</strong>
+        <p class="mb-0">@error</p>
+    </div>
+
+    @if (Environment.IsDevelopment() &&
+         !string.IsNullOrEmpty(errorDetails))
+    {
+        <div class="alert alert-warning">
+            <strong>Деталі помилки:</strong>
+            <pre style="white-space: pre-wrap;">@errorDetails</pre>
+        </div>
+    }
+}
+else if (overall.Count == 0)
+{
+    <div class="alert alert-info">
+        Записів тренувань поки немає.
+        Додайте перше тренування.
+    </div>
+}
+else
+{
+    <h3>1. Зведення за видами спорту</h3>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Вид спорту</th>
+                <th>Кількість тренувань</th>
+                <th>Загальна тривалість (хв)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in bySport)
+            {
+                <tr>
+                    <td>@row.Name</td>
+                    <td>@row.Count</td>
+                    <td>@row.Total</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr class="table-secondary fw-bold">
+                <td>Усього</td>
+                <td>@overall.Count</td>
+                <td>@overall.Total</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h3 class="mt-5">2. Зведення за місяцями</h3>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Місяць</th>
+                <th>Кількість тренувань</th>
+                <th>Загальна тривалість (хв)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in byMonth)
+            {
+                <tr>
+                    <td>@row.Name</td>
+                    <td>@row.Count</td>
+                    <td>@row.Total</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr class="table-secondary fw-bold">
+                <td>Усього</td>
+                <td>@overall.Count</td>
+                <td>@overall.Total</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h3 class="mt-5">3. Загальні показники</h3>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Показник</th>
+                <th>Значення</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Загальна кількість тренувань</td>
+                <td>@overall.Count</td>
+            </tr>
+            <tr>
+                <td>Загальна тривалість тренувань</td>
+                <td>@overall.Total хв</td>
+            </tr>
+        </tbody>
+    </table>
+}
+
+<div class="mt-4">
+    <a href="/workouts" class="btn btn-outline-primary">
+        Назад до тренувань
+    </a>
+</div>
+
+@code {
+    private List<SummaryRow> bySport = new();
+    private List<SummaryRow> byMonth = new();
+
+    private SummaryRow overall = new("Усього", 0, 0);
+
+    private bool isLoading = true;
+    private string? error;
+    private string? errorDetails;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await using var context =
+                await DbFactory.CreateDbContextAsync();
+
+            var query = context.Workouts.AsNoTracking();
+
+            bySport = await SummaryCalculator.BySportAsync(query);
+
+            byMonth = await SummaryCalculator.ByMonthAsync(query);
+
+            overall = await SummaryCalculator.OverallAsync(query);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "Помилка під час формування зведень тренувань");
+
+            error = "Не вдалося завантажити зведення тренувань.";
+
+            if (Environment.IsDevelopment())
+            {
+                errorDetails = ex.ToString();
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
