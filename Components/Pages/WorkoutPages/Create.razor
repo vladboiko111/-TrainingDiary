@@ -9,6 +9,7 @@
 
 @inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject ILogger<Create> Logger
 
 <PageTitle>Додати тренування — Щоденник тренувань</PageTitle>
 
@@ -178,7 +179,6 @@
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
     private int? SelectedExerciseId { get; set; }
 
-    // Без ініціалізатора — виправлення BL0008.
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
     private WorkoutType SelectedType { get; set; }
 
@@ -188,7 +188,6 @@
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
     private string? DistanceText { get; set; }
 
-    // Nullable для перевірки відсутньої дати.
     [SupplyParameterFromForm(FormName = "create-workout-lab7")]
     private DateTime? PerformedOn { get; set; }
 
@@ -294,7 +293,6 @@
             SportType = category.Name,
             ExerciseName = exercise.Name,
 
-            // Службове поле пошуку з ЛР №8.
             ExerciseNameSearch =
                 exercise.Name.Trim().ToLowerInvariant(),
 
@@ -331,16 +329,27 @@
                 sqliteEx.SqliteExtendedErrorCode == 2067)
             {
                 error = "Тренування з такою назвою та датою вже існує.";
+
+                Logger.LogWarning(
+                    "Не вдалося створити тренування: дубль запису.");
             }
             else
             {
                 error = "Не вдалося зберегти тренування. Спробуйте ще раз.";
+
+                Logger.LogError(
+                    ex,
+                    "Помилка створення тренування.");
             }
 
             return;
         }
 
-        // ЛР №10: повідомлення після успішного збереження.
+        // ЛР №13: журналювання після успішного збереження.
+        Logger.LogInformation(
+            "Створено тренування з ID {WorkoutId}",
+            workout.Id);
+
         NavigationManager.NavigateTo("/workouts?saved=true");
     }
 }

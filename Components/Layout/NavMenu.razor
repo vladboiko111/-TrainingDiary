@@ -1,8 +1,10 @@
 ﻿
+@inject IConfiguration Config
+
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">
-            Щоденник тренувань
+            @ApplicationTitle
         </a>
     </div>
 </div>
@@ -96,3 +98,9 @@
 
     </nav>
 </div>
+
+@code {
+    // ЛР №13: назва береться з appsettings.json.
+    private string ApplicationTitle =>
+        Config["TrainingDiary:Title"] ?? "Щоденник тренувань";
+}

@@ -7,6 +7,7 @@
 
 @inject IDbContextFactory<TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject ILogger<Delete> Logger
 
 <PageTitle>Видалення тренування — Щоденник тренувань</PageTitle>
 
@@ -97,6 +98,13 @@ else
             .Include(w => w.SportCategory)
             .Include(w => w.Exercise)
             .FirstOrDefaultAsync(w => w.Id == Id);
+
+        if (workout is null)
+        {
+            Logger.LogWarning(
+                "Спроба відкрити видалення неіснуючого тренування з ID {WorkoutId}",
+                Id);
+        }
     }
 
     private async Task DeleteWorkout()
@@ -106,6 +114,10 @@ else
         if (!WorkoutId.HasValue || WorkoutId.Value != Id)
         {
             error = "Невірний ідентифікатор тренування.";
+
+            Logger.LogWarning(
+                "Некоректний ідентифікатор при видаленні тренування.");
+
             return;
         }
 
@@ -118,6 +130,11 @@ else
         if (record is null)
         {
             error = "Запис уже видалено або його не знайдено.";
+
+            Logger.LogWarning(
+                "Не вдалося видалити тренування: ID {WorkoutId} не знайдено",
+                Id);
+
             return;
         }
 
@@ -126,16 +143,33 @@ else
             context.Workouts.Remove(record);
             await context.SaveChangesAsync();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException ex)
         {
             error = "Запис уже було змінено або видалено.";
+
+            Logger.LogWarning(
+                ex,
+                "Конфлікт видалення тренування з ID {WorkoutId}",
+                Id);
+
             return;
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
             error = "Не вдалося видалити тренування. Спробуйте ще раз.";
+
+            Logger.LogError(
+                ex,
+                "Помилка видалення тренування з ID {WorkoutId}",
+                Id);
+
             return;
         }
+
+        // ЛР №13: журналювання успішного видалення.
+        Logger.LogInformation(
+            "Видалено тренування з ID {WorkoutId}",
+            Id);
 
         NavigationManager.NavigateTo("/workouts?deleted=true");
     }

@@ -7,27 +7,92 @@ using TrainingDiary.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Компоненти Blazor
+// ==========================================
+// ЛР №13. КОНФІГУРАЦІЯ
+// ==========================================
+
+// Отримуємо рядок підключення з appsettings.json
+var connectionString = builder.Configuration
+    .GetConnectionString("Default")
+    ?? throw new InvalidOperationException(
+        "Не знайдено ConnectionStrings:Default.");
+
+// Власні параметри застосунку
+var pageSize = builder.Configuration
+    .GetValue<int>("TrainingDiary:PageSize", 5);
+
+var applicationTitle = builder.Configuration[
+    "TrainingDiary:Title"
+] ?? "Щоденник тренувань";
+
+if (pageSize < 1)
+{
+    throw new InvalidOperationException(
+        "TrainingDiary:PageSize має бути більше нуля.");
+}
+
+// ==========================================
+// СЕРВІСИ
+// ==========================================
+
+// Blazor
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// База даних SQLite
+// SQLite
 builder.Services.AddDbContextFactory<TrainingDiaryContext>(
-    options =>
-        options.UseSqlite("Data Source=trainingdiary.db"));
+    options => options.UseSqlite(connectionString));
 
 // QuickGrid
 builder.Services.AddQuickGridEntityFrameworkAdapter();
 
-// Сторінка помилок бази даних
+// Помилки Entity Framework Core
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// ЛР №11: OpenAPI
+// OpenAPI
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Налаштування середовища
+// ==========================================
+// ЖУРНАЛЮВАННЯ
+// ==========================================
+
+app.Logger.LogInformation(
+    "Запуск TrainingDiary. Назва: {Title}, " +
+    "кількість записів на сторінці: {PageSize}",
+    applicationTitle,
+    pageSize);
+
+// ==========================================
+// АВТОМАТИЧНІ МІГРАЦІЇ
+// ==========================================
+
+// Міграції застосовуються до бази,
+// вказаної в ConnectionStrings:Default.
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<
+            IDbContextFactory<TrainingDiaryContext>>();
+
+    await using var db =
+        await factory.CreateDbContextAsync();
+
+    app.Logger.LogInformation(
+        "Перевірка міграцій бази даних.");
+
+    await db.Database.MigrateAsync();
+
+    app.Logger.LogInformation(
+        "Перевірку міграцій завершено.");
+}
+
+// ==========================================
+// НАЛАШТУВАННЯ СЕРЕДОВИЩА
+// ==========================================
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler(
@@ -35,11 +100,12 @@ if (!app.Environment.IsDevelopment())
         createScopeForErrors: true);
 
     app.UseHsts();
-    app.UseMigrationsEndPoint();
 }
 else
 {
-    // Документація доступна у режимі Development
+    app.UseMigrationsEndPoint();
+
+    // Документація API в Development
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
@@ -49,6 +115,7 @@ app.UseStatusCodePagesWithReExecute(
     createScopeForStatusCodePages: true);
 
 app.UseHttpsRedirection();
+
 app.UseAntiforgery();
 
 // Статичні файли
@@ -58,16 +125,14 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// ========================================
-// ЛАБОРАТОРНА РОБОТА №11
-// Мінімальний вебсервіс
-// ========================================
+// ==========================================
+// ЛР №11. МІНІМАЛЬНИЙ API
+// ==========================================
 
-// Спільний префікс API
 var api = app.MapGroup("/api")
     .WithTags("TrainingDiary API");
 
-// 1. Отримати всі тренування
+// 1. Список тренувань
 api.MapGet("/workouts",
     async (
         IDbContextFactory<TrainingDiaryContext> factory) =>
@@ -98,9 +163,10 @@ api.MapGet("/workouts",
     .WithSummary("Отримати всі тренування")
     .WithDescription(
         "Повертає список тренувань у форматі JSON.")
-    .Produces<List<WorkoutDto>>(StatusCodes.Status200OK);
+    .Produces<List<WorkoutDto>>(
+        StatusCodes.Status200OK);
 
-// 2. Отримати тренування за ID
+// 2. Тренування за ID
 api.MapGet("/workouts/{id:int}",
     async (
         int id,
@@ -134,8 +200,10 @@ api.MapGet("/workouts/{id:int}",
     .WithSummary("Отримати тренування за ID")
     .WithDescription(
         "Повертає тренування або код 404, якщо запис не знайдено.")
-    .Produces<WorkoutDto>(StatusCodes.Status200OK)
-    .Produces(StatusCodes.Status404NotFound);
+    .Produces<WorkoutDto>(
+        StatusCodes.Status200OK)
+    .Produces(
+        StatusCodes.Status404NotFound);
 
 // 3. Загальне зведення
 api.MapGet("/summary",
@@ -170,6 +238,7 @@ api.MapGet("/summary",
     .WithSummary("Отримати зведення тренувань")
     .WithDescription(
         "Повертає кількість тренувань, сумарну та середню тривалість.")
-    .Produces<SummaryRow>(StatusCodes.Status200OK);
+    .Produces<SummaryRow>(
+        StatusCodes.Status200OK);
 
 app.Run();

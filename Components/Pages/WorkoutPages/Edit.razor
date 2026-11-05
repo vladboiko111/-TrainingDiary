@@ -9,6 +9,7 @@
 
 @inject IDbContextFactory<TrainingDiary.Data.TrainingDiaryContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject ILogger<Edit> Logger
 
 <PageTitle>Редагування тренування — Щоденник тренувань</PageTitle>
 
@@ -244,6 +245,10 @@ else
 
         if (existingWorkout is null)
         {
+            Logger.LogWarning(
+                "Спроба редагування неіснуючого тренування з ID {WorkoutId}",
+                Id);
+
             NavigationManager.NotFound();
             return;
         }
@@ -389,6 +394,11 @@ else
         if (record is null)
         {
             error = "Тренування не знайдено. Можливо, його видалено.";
+
+            Logger.LogWarning(
+                "Не вдалося редагувати тренування: ID {WorkoutId} не знайдено",
+                Id);
+
             return;
         }
 
@@ -408,9 +418,15 @@ else
         {
             await context.SaveChangesAsync();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException ex)
         {
             error = "Запис було змінено або видалено. Оновіть сторінку.";
+
+            Logger.LogWarning(
+                ex,
+                "Конфлікт редагування тренування з ID {WorkoutId}",
+                Id);
+
             return;
         }
         catch (DbUpdateException ex)
@@ -419,16 +435,29 @@ else
                 sqliteEx.SqliteExtendedErrorCode == 2067)
             {
                 error = "Тренування з такою назвою та датою вже існує.";
+
+                Logger.LogWarning(
+                    "Дубль тренування під час редагування ID {WorkoutId}",
+                    Id);
             }
             else
             {
                 error = "Не вдалося зберегти зміни. Спробуйте ще раз.";
+
+                Logger.LogError(
+                    ex,
+                    "Помилка редагування тренування з ID {WorkoutId}",
+                    Id);
             }
 
             return;
         }
 
-        // Повідомлення про успішне редагування.
+        // ЛР №13: журналювання успішної операції.
+        Logger.LogInformation(
+            "Оновлено тренування з ID {WorkoutId}",
+            Id);
+
         NavigationManager.NavigateTo("/workouts?saved=true");
     }
 }
